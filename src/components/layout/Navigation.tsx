@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { BrushStroke } from "@/components/brand/BrushStroke";
 import { CTA } from "@/components/ui/CTA";
+import { useCart } from "@/context/CartContext";
 import { MICROCOPY, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/cn";
 
@@ -32,6 +33,7 @@ function CartIcon({ className }: { className?: string }) {
 
 export function Navigation() {
   const pathname = usePathname();
+  const { count } = useCart();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuId = useId();
@@ -97,7 +99,7 @@ export function Navigation() {
 
           <div className="flex items-center gap-3 md:gap-4">
             <CTA
-              href="/contacto"
+              href="/proyectos"
               variant="primary"
               size="sm"
               className="hidden sm:inline-flex"
@@ -108,9 +110,14 @@ export function Navigation() {
             <Link
               href="/carrito"
               className="relative inline-flex h-10 w-10 items-center justify-center text-lc-offwhite transition-colors hover:text-lc-lilac"
-              aria-label="Carrito"
+              aria-label={`Carrito${count ? `, ${count} productos` : ""}`}
             >
               <CartIcon className="h-5 w-5" />
+              {count > 0 ? (
+                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center bg-lc-lilac px-1 text-[10px] font-bold text-lc-black">
+                  {count}
+                </span>
+              ) : null}
             </Link>
 
             <button
@@ -193,7 +200,7 @@ export function Navigation() {
           </nav>
 
           <div className="relative z-10 mt-auto space-y-4">
-            <CTA href="/contacto" variant="lilac" size="lg" className="w-full">
+            <CTA href="/proyectos" variant="lilac" size="lg" className="w-full">
               {MICROCOPY.openBox}
             </CTA>
             <p className="text-micro text-lc-gray">ESTUDIO CREATIVO · CANARIAS</p>
