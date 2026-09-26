@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 90" fill="none" role="img" aria-label="LA CAJA">
+  <!--
+    PLACEHOLDER del wordmark personalizado.
+    Sustituir por el archivo gráfico ORIGINAL de LA CAJA.
+    Las A tienen cortes/aperturas deliberados (no es tipografía estándar).
+  -->
+  <g fill="#F4F2EE">
+    <!-- L -->
+    <path d="M8 12h18v52H48v14H8V12z"/>
+    <!-- A (corte superior abierto) -->
+    <path d="M78 78 L108 12h20l30 66h-20l-5-12H103l-5 12H78zm30-26h18l-9-22-9 22z"/>
+    <!--   espacio -->
+    <!-- C -->
+    <path d="M198 24c12-10 28-14 44-12l2 16c-12-4-28-2-36 8-8 10-8 28 0 38 8 10 24 12 36 8l-2 16c-16 4-36 2-50-12-16-16-16-44 6-62z"/>
+    <!-- A (corte asimétrico) -->
+    <path d="M258 78 L288 12h18l32 66h-20l-6-14h-20l-6 14h-18zm28-28h16l-8-20-8 20z"/>
+    <!-- J -->
+    <path d="M348 12h18v48c0 12-8 20-22 20-10 0-18-4-22-10l12-12c2 4 6 6 10 6 6 0 8-4 8-10V12z"/>
+    <!-- A (apertura baja) -->
+    <path d="M388 78 L418 12h20l30 66h-20l-5-12H413l-5 12h-20zm30-26h18l-9-22-9 22z"/>
+  </g>
+</svg>
