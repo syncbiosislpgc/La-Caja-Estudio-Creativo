@@ -115,7 +115,7 @@ export function Navigation() {
 
             <button
               type="button"
-              className="inline-flex h-10 w-10 flex-col items-center justify-center gap-1.5 lg:hidden"
+              className="relative z-[60] inline-flex h-11 w-11 flex-col items-center justify-center gap-[6px] lg:hidden"
               aria-expanded={open}
               aria-controls={menuId}
               aria-label={open ? "Cerrar menú" : "Abrir menú"}
@@ -123,20 +123,20 @@ export function Navigation() {
             >
               <span
                 className={cn(
-                  "h-px w-6 bg-lc-offwhite transition-transform duration-300",
-                  open && "translate-y-[3.5px] rotate-45",
+                  "block h-[1.5px] w-6 bg-lc-offwhite transition-transform duration-300",
+                  open && "translate-y-[7.5px] rotate-45",
                 )}
               />
               <span
                 className={cn(
-                  "h-px w-6 bg-lc-offwhite transition-opacity duration-300",
+                  "block h-[1.5px] w-6 bg-lc-offwhite transition-opacity duration-300",
                   open && "opacity-0",
                 )}
               />
               <span
                 className={cn(
-                  "h-px w-6 bg-lc-offwhite transition-transform duration-300",
-                  open && "-translate-y-[3.5px] -rotate-45",
+                  "block h-[1.5px] w-6 bg-lc-offwhite transition-transform duration-300",
+                  open && "-translate-y-[7.5px] -rotate-45",
                 )}
               />
             </button>
@@ -148,7 +148,7 @@ export function Navigation() {
       <div
         id={menuId}
         className={cn(
-          "fixed inset-0 z-40 bg-lc-black transition-[opacity,visibility] duration-400 lg:hidden",
+          "fixed inset-0 z-40 bg-lc-black transition-[opacity,visibility] duration-300 lg:hidden",
           open
             ? "visible opacity-100"
             : "invisible pointer-events-none opacity-0",

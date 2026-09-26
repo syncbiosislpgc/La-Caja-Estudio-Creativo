@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
@@ -13,7 +12,8 @@ type BrandLogoProps = {
 };
 
 /**
- * Siempre usa assets gráficos originales.
+ * Siempre usa assets gráficos originales (SVG/PNG).
+ * next/image no optimiza SVG de forma fiable → <img> nativo.
  * Sustituir public/brand/wordmark.svg y box-symbol.svg por los masters oficiales.
  */
 export function BrandLogo({
@@ -28,23 +28,27 @@ export function BrandLogo({
   const content = (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       {showMark ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src="/brand/box-symbol.svg"
           alt=""
           width={44}
           height={36}
-          priority={priority}
+          decoding="async"
+          {...(priority ? { fetchPriority: "high" as const } : {})}
           className={cn("h-8 w-auto shrink-0 md:h-9", markClassName)}
           aria-hidden
         />
       ) : null}
       {showWordmark ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src="/brand/wordmark.svg"
           alt="LA CAJA"
           width={160}
           height={28}
-          priority={priority}
+          decoding="async"
+          {...(priority ? { fetchPriority: "high" as const } : {})}
           className={cn("h-5 w-auto md:h-6", wordmarkClassName)}
         />
       ) : null}
