@@ -30,18 +30,15 @@ Copia `.env.example` → `.env.local` y completa Sanity / Shopify / URL del siti
 
 Ver [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) para arquitectura, design system, modelos de datos, credenciales y fases.
 
-## Fases
+## Rutas
 
-1. Arquitectura + design system + layout ← actual
-2. Home
-3. Estudio + Servicios
-4. Portfolio + CMS
-5. Shop
-6. Collabs
-7. Personalizador
-8. Animaciones avanzadas
-9. SEO + performance + a11y + QA
+| Ruta | Producto |
+|------|----------|
+| `/` | LA CAJA — Estudio Creativo |
+| `/control-plane` | AI-Native Edge & Network Control Plane |
 
-## Branding
+Documentación del control plane: [`docs/CONTROL_PLANE_ARCHITECTURE.md`](./docs/CONTROL_PLANE_ARCHITECTURE.md)
 
-El wordmark **LA CAJA** es un archivo gráfico original. Sustituir `public/brand/wordmark.svg` por el master oficial.
+## Branding LA CAJA
+
+El wordmark **LA CAJA** es un archivo gráfico. Sustituir `public/brand/wordmark.svg` por el master oficial.
