@@ -28,7 +28,7 @@ export default function ControlPlaneOverviewPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 xl:grid-cols-8">
         <MetricTile label="Clusters" value={String(world.clusters.length)} />
         <MetricTile label="Sites" value={String(world.sites.length)} />
         <MetricTile label="Nodes" value={String(world.nodes.length)} />
@@ -54,7 +54,7 @@ export default function ControlPlaneOverviewPage() {
         />
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
         <MetricTile label="Network health" value={`${m.networkHealthPct}%`} />
         <MetricTile label="Energy est." value={`${m.energyKw} kW`} hint="SIMULATED" />
         <MetricTile
@@ -72,11 +72,32 @@ export default function ControlPlaneOverviewPage() {
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="cp-panel">
+        <div className="cp-panel overflow-hidden">
           <div className="border-b border-[var(--cp-border)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--cp-muted)]">
             Clusters
           </div>
-          <table className="w-full text-left text-[12px]">
+          <ul className="divide-y divide-[var(--cp-border)] md:hidden">
+            {world.clusters.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-2 px-3 py-3">
+                <div className="min-w-0">
+                  <Link
+                    href={`/control-plane/clusters/${c.id}`}
+                    className="block truncate font-medium text-[var(--cp-accent)]"
+                  >
+                    {c.name}
+                  </Link>
+                  <p className="text-[11px] text-[var(--cp-muted)]">{c.provider}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <StatusDot status={c.status} />
+                  <p className="cp-mono mt-1 text-[11px] text-[var(--cp-muted)]">
+                    {c.latencyMs}ms
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <table className="cp-hide-mobile w-full text-left text-[12px]">
             <thead className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
               <tr>
                 <th className="px-3 py-2 font-medium">Cluster</th>

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useControlPlane } from "@/components/control-plane/ControlPlaneProvider";
 import {
   CpButton,
+  EntityCard,
   ModePill,
   PageHeader,
   SourceBadge,
@@ -41,19 +42,51 @@ export default function ClustersPage() {
         }
       />
 
-      <div className="mb-3 flex gap-2">
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
         {(["ALL", "REAL", "SIMULATION"] as const).map((f) => (
           <CpButton
             key={f}
             variant={filter === f ? "accent" : "default"}
             onClick={() => setFilter(f)}
+            className="shrink-0"
           >
             {f}
           </CpButton>
         ))}
       </div>
 
-      <div className="cp-panel overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="grid gap-3 md:hidden">
+        {clusters.map((c) => {
+          const nodes = world.nodes.filter((n) => n.clusterId === c.id);
+          const wls = world.workloads.filter((w) => w.clusterId === c.id);
+          return (
+            <EntityCard
+              key={c.id}
+              href={`/control-plane/clusters/${c.id}`}
+              title={c.name}
+              subtitle={c.connectionError ?? c.location}
+              badge={<SourceBadge source={c.source} />}
+              meta={[
+                { label: "Provider", value: c.provider },
+                { label: "Region", value: c.region },
+                {
+                  label: "Nodes",
+                  value: String(c.nodeIds?.length || nodes.length),
+                },
+                {
+                  label: "Workloads",
+                  value: String(c.workloadCount ?? wls.length),
+                },
+              ]}
+              footer={<StatusDot status={c.status} />}
+            />
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="cp-panel cp-hide-mobile overflow-x-auto">
         <table className="w-full min-w-[980px] text-left text-[12px]">
           <thead className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
             <tr className="border-b border-[var(--cp-border)]">
@@ -131,9 +164,9 @@ export default function ClustersPage() {
         </table>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
         {world.sites.map((s) => (
-          <div key={s.id} className="cp-panel p-3">
+          <div key={s.id} className="cp-panel cp-panel-hover p-3.5">
             <p className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
               Edge site
             </p>

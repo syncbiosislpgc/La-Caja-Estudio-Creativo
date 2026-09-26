@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useControlPlane } from "@/components/control-plane/ControlPlaneProvider";
 import {
+  EntityCard,
   ModePill,
   PageHeader,
   SourceBadge,
@@ -19,9 +20,46 @@ export default function NodesPage() {
         actions={<ModePill mode="SIMULATION" />}
       />
       {telemetryNote ? (
-        <p className="mb-3 text-[11px] text-[var(--cp-muted)]">{telemetryNote}</p>
+        <p className="mb-3 rounded-[var(--cp-radius)] border border-[var(--cp-border)] bg-[var(--cp-panel)]/60 px-3 py-2 text-[11px] text-[var(--cp-muted)]">
+          {telemetryNote}
+        </p>
       ) : null}
-      <div className="cp-panel overflow-x-auto">
+
+      <div className="grid gap-3 md:hidden">
+        {world.nodes.map((n) => {
+          const cluster = world.clusters.find((c) => c.id === n.clusterId);
+          const real = n.source !== "simulation";
+          return (
+            <EntityCard
+              key={n.id}
+              href={`/control-plane/nodes/${encodeURIComponent(n.id)}`}
+              title={n.name}
+              subtitle={n.accelerator ?? n.osImage ?? cluster?.name}
+              badge={<SourceBadge source={n.source} />}
+              meta={[
+                {
+                  label: "CPU",
+                  value: real
+                    ? `${n.cpuCores} / ${n.allocatableCpu || "—"}`
+                    : `${n.cpuUsedPct}%`,
+                },
+                {
+                  label: "RAM",
+                  value: real ? `${n.ramGi.toFixed(0)}Gi` : `${n.ramUsedPct}%`,
+                },
+                {
+                  label: "GPU",
+                  value: n.gpuCount ? String(n.gpuCount) : "—",
+                },
+                { label: "Pods", value: String(n.podCount ?? "—") },
+              ]}
+              footer={<StatusDot status={n.status} />}
+            />
+          );
+        })}
+      </div>
+
+      <div className="cp-panel cp-hide-mobile overflow-x-auto">
         <table className="w-full min-w-[1100px] text-left text-[12px]">
           <thead className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
             <tr className="border-b border-[var(--cp-border)]">
@@ -75,21 +113,15 @@ export default function NodesPage() {
                       : `${n.cpuUsedPct}%`}
                   </td>
                   <td className="cp-mono px-3 py-2">
-                    {real
-                      ? `${n.ramGi.toFixed(0)}Gi`
-                      : `${n.ramUsedPct}%`}
+                    {real ? `${n.ramGi.toFixed(0)}Gi` : `${n.ramUsedPct}%`}
                   </td>
-                  <td className="cp-mono px-3 py-2">
-                    {n.gpuCount ? (real ? String(n.gpuCount) : `${n.gpuUsedPct}%`) : "—"}
-                  </td>
-                  <td className="cp-mono px-3 py-2">
-                    {real ? (n.podCount ?? 0) : "—"}
-                  </td>
+                  <td className="cp-mono px-3 py-2">{n.gpuCount || "—"}</td>
+                  <td className="cp-mono px-3 py-2">{n.podCount ?? "—"}</td>
                   <td className="px-3 py-2 text-[var(--cp-muted)]">
                     {n.architecture ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-[var(--cp-muted)]">
-                    {n.agentStatus}
+                    {n.agentStatus ?? "—"}
                   </td>
                   <td className="px-3 py-2">
                     <StatusDot status={n.status} />
@@ -99,10 +131,6 @@ export default function NodesPage() {
             })}
           </tbody>
         </table>
-        <p className="border-t border-[var(--cp-border)] px-3 py-2 text-[10px] text-[var(--cp-muted)]">
-          REAL CPU/memory %: Not configured (needs metrics-server/Prometheus). Showing
-          capacity/allocatable from Kubernetes API only.
-        </p>
       </div>
     </div>
   );

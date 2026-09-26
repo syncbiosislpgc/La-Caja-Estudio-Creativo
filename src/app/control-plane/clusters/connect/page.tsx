@@ -10,6 +10,8 @@ import {
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
+const STEPS = ["Name", "Provider", "Connection", "Test", "Discover", "Confirm"] as const;
+
 export default function ConnectClusterPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
@@ -90,22 +92,24 @@ export default function ConnectClusterPage() {
         actions={<ModePill mode="NOT_CONFIGURED" />}
       />
 
-      <ol className="mb-4 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
-        {["Name", "Provider", "Connection", "Test", "Discover", "Confirm"].map(
-          (label, i) => (
-            <li
-              key={label}
-              className={
-                step === i + 1 ? "text-[var(--cp-accent)]" : undefined
-              }
-            >
-              {i + 1}. {label}
-            </li>
-          ),
-        )}
+      <ol className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        {STEPS.map((label, i) => (
+          <li
+            key={label}
+            className={
+              step === i + 1
+                ? "cp-step cp-step-active shrink-0"
+                : step > i + 1
+                  ? "cp-step shrink-0 border-emerald-500/40 text-emerald-400"
+                  : "cp-step shrink-0"
+            }
+          >
+            {i + 1}. {label}
+          </li>
+        ))}
       </ol>
 
-      <div className="cp-panel space-y-4 p-4">
+      <div className="cp-panel space-y-4 p-4 sm:p-5">
         {step === 1 ? (
           <>
             <label className="block text-[11px] text-[var(--cp-muted)]">
@@ -113,7 +117,7 @@ export default function ConnectClusterPage() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full border border-[var(--cp-border)] bg-[var(--cp-bg)] px-3 py-2 text-[13px] text-[var(--cp-text)]"
+                className="cp-input mt-1"
               />
             </label>
             <CpButton variant="accent" onClick={() => setStep(2)}>
@@ -125,7 +129,7 @@ export default function ConnectClusterPage() {
         {step === 2 ? (
           <>
             <p className="text-[11px] text-[var(--cp-muted)]">Provider</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {(
                 [
                   ["kubernetes", "Kubernetes"],
@@ -138,12 +142,13 @@ export default function ConnectClusterPage() {
                   variant={provider === id ? "accent" : "default"}
                   onClick={() => setProvider(id)}
                   disabled={id === "kubeedge"}
+                  className="w-full"
                 >
                   {label}
                 </CpButton>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <CpButton onClick={() => setStep(1)}>Back</CpButton>
               <CpButton variant="accent" onClick={() => setStep(3)}>
                 Next
@@ -159,8 +164,8 @@ export default function ConnectClusterPage() {
               <textarea
                 value={kubeconfig}
                 onChange={(e) => setKubeconfig(e.target.value)}
-                rows={12}
-                className="mt-1 w-full border border-[var(--cp-border)] bg-[var(--cp-bg)] px-3 py-2 font-mono text-[11px] text-[var(--cp-text)]"
+                rows={10}
+                className="cp-input mt-1 font-mono text-[11px]"
                 placeholder="apiVersion: v1&#10;kind: Config&#10;..."
               />
             </label>
@@ -169,7 +174,7 @@ export default function ConnectClusterPage() {
               <input
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                className="mt-1 w-full border border-[var(--cp-border)] bg-[var(--cp-bg)] px-3 py-2 text-[13px]"
+                className="cp-input mt-1"
               />
             </label>
             <label className="block text-[11px] text-[var(--cp-muted)]">
@@ -177,10 +182,10 @@ export default function ConnectClusterPage() {
               <input
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className="mt-1 w-full border border-[var(--cp-border)] bg-[var(--cp-bg)] px-3 py-2 text-[13px]"
+                className="cp-input mt-1"
               />
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <CpButton onClick={() => setStep(2)}>Back</CpButton>
               <CpButton
                 variant="accent"
@@ -195,7 +200,7 @@ export default function ConnectClusterPage() {
 
         {step === 4 ? (
           <>
-            <p className="text-[12px] text-[var(--cp-text)]">
+            <p className="text-[13px] leading-relaxed text-[var(--cp-text)]">
               Test connection to Kubernetes API using the provided kubeconfig
               (server-side only).
             </p>
@@ -203,15 +208,15 @@ export default function ConnectClusterPage() {
               <p
                 className={
                   testResult.ok
-                    ? "text-[12px] text-emerald-400"
-                    : "text-[12px] text-[var(--cp-crit)]"
+                    ? "rounded-[var(--cp-radius)] border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-400"
+                    : "rounded-[var(--cp-radius)] border border-[var(--cp-crit)]/30 bg-[var(--cp-crit)]/10 px-3 py-2 text-[12px] text-[var(--cp-crit)]"
                 }
               >
                 {testResult.ok ? "Connected" : "Connection failed"} —{" "}
                 {testResult.message}
               </p>
             ) : null}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <CpButton onClick={() => setStep(3)}>Back</CpButton>
               <CpButton variant="accent" disabled={busy} onClick={() => void runTest()}>
                 {busy ? "Testing…" : "Test connection"}
@@ -222,13 +227,13 @@ export default function ConnectClusterPage() {
 
         {step === 5 ? (
           <>
-            <p className="text-[12px] text-emerald-400">
+            <p className="text-[13px] text-emerald-400">
               {testResult?.message ?? "Ready to discover"}
             </p>
             <p className="text-[12px] text-[var(--cp-muted)]">
               Confirm to store the connection and discover nodes/workloads.
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <CpButton onClick={() => setStep(4)}>Back</CpButton>
               <CpButton variant="accent" disabled={busy} onClick={() => void connect()}>
                 {busy ? "Discovering…" : "Discover infrastructure"}
@@ -239,12 +244,24 @@ export default function ConnectClusterPage() {
 
         {step === 6 ? (
           <>
-            <p className="text-[15px] font-semibold text-emerald-400">Connected</p>
-            <ul className="space-y-1 text-[12px] text-[var(--cp-text)]">
-              <li>Cluster: {name}</li>
-              <li>Provider: {provider}</li>
-              <li>Version: {discover?.version ?? "—"}</li>
-              <li>Nodes discovered: {discover?.nodes ?? "—"}</li>
+            <p className="text-[18px] font-semibold text-emerald-400">Connected</p>
+            <ul className="grid grid-cols-2 gap-2 text-[12px] text-[var(--cp-text)]">
+              <li className="cp-panel p-3">
+                <span className="text-[10px] uppercase text-[var(--cp-muted)]">Cluster</span>
+                <p className="mt-1 font-medium">{name}</p>
+              </li>
+              <li className="cp-panel p-3">
+                <span className="text-[10px] uppercase text-[var(--cp-muted)]">Provider</span>
+                <p className="mt-1 font-medium">{provider}</p>
+              </li>
+              <li className="cp-panel p-3">
+                <span className="text-[10px] uppercase text-[var(--cp-muted)]">Version</span>
+                <p className="mt-1 font-medium">{discover?.version ?? "—"}</p>
+              </li>
+              <li className="cp-panel p-3">
+                <span className="text-[10px] uppercase text-[var(--cp-muted)]">Nodes</span>
+                <p className="mt-1 font-medium">{discover?.nodes ?? "—"}</p>
+              </li>
             </ul>
             {discover?.error ? (
               <p className="text-[12px] text-[var(--cp-crit)]">{discover.error}</p>
@@ -259,7 +276,7 @@ export default function ConnectClusterPage() {
         ) : null}
 
         {error ? (
-          <p className="text-[12px] text-[var(--cp-crit)]">
+          <p className="rounded-[var(--cp-radius)] border border-[var(--cp-crit)]/30 bg-[var(--cp-crit)]/10 px-3 py-2 text-[12px] text-[var(--cp-crit)]">
             Connection failed — {error}
           </p>
         ) : null}

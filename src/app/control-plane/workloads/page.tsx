@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useControlPlane } from "@/components/control-plane/ControlPlaneProvider";
-import { ModePill, PageHeader, SourceBadge } from "@/components/control-plane/ui";
+import {
+  EntityCard,
+  ModePill,
+  PageHeader,
+  SourceBadge,
+} from "@/components/control-plane/ui";
 
 export default function WorkloadsPage() {
   const { world } = useControlPlane();
@@ -13,7 +18,40 @@ export default function WorkloadsPage() {
         subtitle="SIMULATED lab workloads + REAL Deployments from connected clusters"
         actions={<ModePill mode="SIMULATION" />}
       />
-      <div className="cp-panel overflow-x-auto">
+
+      <div className="grid gap-3 md:hidden">
+        {world.workloads.map((w) => {
+          const node = world.nodes.find((n) => n.id === w.nodeId);
+          const real = w.source !== "simulation";
+          const breach = !real && w.e2eLatencyMs > w.maxLatencyMs;
+          return (
+            <EntityCard
+              key={w.id}
+              href={`/control-plane/workloads/${encodeURIComponent(w.id)}`}
+              title={w.name}
+              subtitle={w.image}
+              badge={<SourceBadge source={w.source} />}
+              meta={[
+                { label: "Type", value: w.type },
+                { label: "Status", value: w.status },
+                { label: "Namespace", value: w.namespace ?? "—" },
+                { label: "Node", value: node?.name ?? "—" },
+              ]}
+              footer={
+                <p
+                  className={`cp-mono text-[11px] ${breach ? "text-[var(--cp-crit)]" : "text-[var(--cp-muted)]"}`}
+                >
+                  {real
+                    ? `${w.restarts ?? 0} restarts`
+                    : `E2E ${w.e2eLatencyMs.toFixed(1)}ms`}
+                </p>
+              }
+            />
+          );
+        })}
+      </div>
+
+      <div className="cp-panel cp-hide-mobile overflow-x-auto">
         <table className="w-full min-w-[1000px] text-left text-[12px]">
           <thead className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
             <tr className="border-b border-[var(--cp-border)]">
@@ -38,7 +76,10 @@ export default function WorkloadsPage() {
               const real = w.source !== "simulation";
               const breach = !real && w.e2eLatencyMs > w.maxLatencyMs;
               return (
-                <tr key={w.id} className="border-t border-[var(--cp-border)]">
+                <tr
+                  key={w.id}
+                  className="border-t border-[var(--cp-border)] hover:bg-white/[0.02]"
+                >
                   <td className="px-3 py-2">
                     <Link
                       href={`/control-plane/workloads/${encodeURIComponent(w.id)}`}
