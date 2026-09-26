@@ -14,17 +14,15 @@ export default function CheckoutPage() {
       <div className="mx-auto flex min-h-[60dvh] max-w-3xl flex-col justify-center px-5 py-20 md:px-8">
         <p className="text-micro text-lc-lilac">PEDIDO DEMO</p>
         <h1 className="display-lg mt-4 text-lc-offwhite">
-          YA SALIÓ
-          <br />
-          DE LA CAJA.
+          PEDIDO RECIBIDO
         </h1>
         <p className="mt-6 text-lc-gray">
-          Esto es un checkout de demostración. En producción redirigiremos a
-          Shopify Checkout real.
+          Esto es un checkout de demostración. En producción el pago se hará
+          con Shopify Checkout.
         </p>
         <div className="mt-10">
           <CTA href="/shop" variant="primary" size="lg">
-            VOLVER AL SHOP
+            VOLVER A LA TIENDA
           </CTA>
         </div>
       </div>
@@ -34,10 +32,10 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto flex min-h-[50dvh] flex-col items-start justify-center px-5 py-20">
-        <h1 className="display-md text-lc-offwhite">LA CAJA ESTÁ VACÍA.</h1>
+        <h1 className="display-md text-lc-offwhite">TU CARRITO ESTÁ VACÍO</h1>
         <div className="mt-8">
           <CTA href="/shop" variant="lilac" size="lg">
-            IR AL SHOP
+            IR A LA TIENDA
           </CTA>
         </div>
       </div>
@@ -48,9 +46,9 @@ export default function CheckoutPage() {
     <div className="mx-auto grid max-w-[1100px] gap-12 px-5 py-14 md:grid-cols-2 md:px-8 md:py-20">
       <div>
         <p className="text-micro text-lc-lilac">CHECKOUT DEMO</p>
-        <h1 className="display-md mt-3 text-lc-offwhite">SACAR DE LA CAJA</h1>
+        <h1 className="display-md mt-3 text-lc-offwhite">FINALIZAR COMPRA</h1>
         <p className="mt-4 text-sm text-lc-gray">
-          Formulario ficticio. No se procesa ningún pago.
+          Formulario de demostración. No se procesa ningún pago real.
         </p>
         <form
           className="mt-8 space-y-4"
@@ -66,7 +64,7 @@ export default function CheckoutPage() {
           <Field id="city" label="Ciudad" required />
           <Field id="cp" label="Código postal" required />
           <CTA type="submit" variant="lilac" size="lg" className="w-full">
-            CONFIRMAR PEDIDO DEMO
+            CONFIRMAR PEDIDO
           </CTA>
         </form>
       </div>

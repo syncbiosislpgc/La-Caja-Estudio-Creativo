@@ -29,7 +29,7 @@ export function PhasePlaceholder({
 
       <div className="mt-12 max-w-xl">
         <BoxFrame contentClassName="p-6 md:p-8">
-          <p className="text-micro text-lc-gray">EN CONSTRUCCIÓN DENTRO DE LA CAJA</p>
+          <p className="text-micro text-lc-gray">PRÓXIMAMENTE</p>
           <p className="mt-3 text-sm leading-relaxed text-lc-offwhite/80">{phase}</p>
         </BoxFrame>
       </div>

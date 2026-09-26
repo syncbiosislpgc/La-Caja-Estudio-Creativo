@@ -135,7 +135,7 @@ export default function ColaboracionesPage() {
         </h2>
         <div className="mt-8">
           <CTA href="/contacto" variant="lilac" size="lg">
-            PROPONER UNA COLABORACIÓN
+            PROPONER COLABORACIÓN
           </CTA>
         </div>
       </div>

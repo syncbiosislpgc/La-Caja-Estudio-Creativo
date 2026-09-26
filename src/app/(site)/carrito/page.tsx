@@ -14,12 +14,13 @@ export default function CarritoPage() {
     return (
       <div className="mx-auto flex min-h-[60dvh] max-w-[1600px] flex-col items-start justify-center px-5 py-20 md:px-8 lg:px-12">
         <p className="text-micro text-lc-lilac">CARRITO</p>
-        <h1 className="display-lg mt-4 whitespace-pre-line text-lc-offwhite">
+        <h1 className="display-lg mt-4 text-lc-offwhite">
           {MICROCOPY.emptyCart}
         </h1>
+        <p className="mt-4 text-lc-gray">{MICROCOPY.emptyCartHint}</p>
         <div className="mt-10 flex flex-wrap gap-3">
           <CTA href="/shop" variant="lilac" size="lg">
-            IR AL SHOP
+            {MICROCOPY.viewShop}
           </CTA>
           <CTA href="/" variant="secondary" size="lg">
             {MICROCOPY.backHome}
@@ -32,7 +33,7 @@ export default function CarritoPage() {
   return (
     <div className="mx-auto max-w-[1600px] px-5 py-14 md:px-8 md:py-20 lg:px-12">
       <p className="text-micro text-lc-lilac">CARRITO</p>
-      <h1 className="display-md mt-3 text-lc-offwhite">YA ESTÁ DENTRO.</h1>
+      <h1 className="display-md mt-3 text-lc-offwhite">TU PEDIDO</h1>
 
       <ul className="mt-12 divide-y divide-lc-offwhite/10 border-y border-lc-offwhite/10">
         {items.map((item) => (
@@ -73,7 +74,7 @@ export default function CarritoPage() {
                 onClick={() => removeItem(item.key)}
                 className="text-micro text-lc-gray hover:text-lc-lilac"
               >
-                SACAR
+                {MICROCOPY.removeItem}
               </button>
             </div>
           </li>
@@ -86,17 +87,17 @@ export default function CarritoPage() {
           onClick={clear}
           className="text-micro text-lc-gray hover:text-lc-offwhite"
         >
-          VACIAR LA CAJA
+          {MICROCOPY.clearCart}
         </button>
         <div className="text-right">
           <p className="text-micro text-lc-gray">SUBTOTAL</p>
           <p className="display-md mt-2 text-lc-offwhite">{formatPrice(subtotal)}</p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
             <CTA href="/shop" variant="secondary" size="md">
-              SEGUIR MIRANDO
+              {MICROCOPY.keepShopping}
             </CTA>
             <CTA href="/checkout" variant="lilac" size="md">
-              IR AL CHECKOUT
+              {MICROCOPY.checkout}
             </CTA>
           </div>
         </div>

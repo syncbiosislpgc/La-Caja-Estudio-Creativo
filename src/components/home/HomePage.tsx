@@ -46,7 +46,7 @@ export function HomePage() {
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <CTA href="/proyectos" variant="primary" size="lg">
-                {MICROCOPY.openBox}
+                {MICROCOPY.viewProjects}
               </CTA>
               <CTA href="/contacto" variant="secondary" size="lg">
                 {MICROCOPY.tellIdea}
@@ -214,7 +214,7 @@ export function HomePage() {
         </div>
         <div className="mt-12">
           <CTA href="/shop" variant="lilac" size="lg">
-            ENTRAR EN LA TIENDA
+            {MICROCOPY.viewShop}
           </CTA>
         </div>
       </section>
@@ -260,7 +260,7 @@ export function HomePage() {
           </div>
           <div className="mt-12">
             <CTA href="/colaboraciones" variant="secondary" size="md">
-              PROPONER UNA COLABORACIÓN
+              {MICROCOPY.proposeCollab}
             </CTA>
           </div>
         </div>
@@ -271,11 +271,9 @@ export function HomePage() {
         <div className="mx-auto flex max-w-[1600px] flex-col items-start px-5 py-24 md:px-8 md:py-32 lg:px-12">
           <BoxFrame className="w-full max-w-4xl" contentClassName="p-6 md:p-12">
             <h2 className="display-xl text-lc-offwhite">
-              ¿QUÉ QUIERES
+              ¿EMPEZAMOS
               <br />
-              METER EN
-              <br />
-              LA CAJA?
+              TU PROYECTO?
             </h2>
             <div className="mt-10">
               <CTA href="/contacto" variant="lilac" size="lg">

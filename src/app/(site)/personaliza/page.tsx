@@ -68,19 +68,17 @@ export default function PersonalizaPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] px-5 py-14 md:px-8 md:py-20 lg:px-12">
-      <p className="text-micro text-lc-lilac">MÉTELO EN LA CAJA</p>
+      <p className="text-micro text-lc-lilac">PERSONALIZADOR</p>
       <h1 className="display-lg mt-4 max-w-3xl text-lc-offwhite">
-        PERSONALIZA.
+        PERSONALIZA
         <br />
-        METE TU IDEA
-        <br />
-        DENTRO.
+        TU PRODUCTO
       </h1>
       <BrushStroke variant="underline" className="mt-2 h-6 w-40" />
       <p className="mt-6 max-w-2xl text-lg text-lc-gray">
-        MVP del personalizador: modelo, color, talla, texto, tipografía y
-        mockup en tiempo real. Subida de archivos y Konva completo llegan
-        después — esto ya calcula precio y guarda JSON.
+        Elige modelo, color y talla, escribe tu texto y mira el mockup al
+        momento. Calculamos el precio y puedes guardar el diseño. Más adelante
+        podrás subir tu propio archivo.
       </p>
 
       <div className="mt-14 grid gap-12 lg:grid-cols-12">

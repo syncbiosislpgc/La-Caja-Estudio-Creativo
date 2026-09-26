@@ -13,16 +13,14 @@ export default function ContactoPage() {
       <div className="md:col-span-5">
         <p className="text-micro text-lc-lilac">CONTACTO</p>
         <h1 className="display-lg mt-4 text-lc-offwhite">
-          ¿QUÉ QUIERES
+          CUÉNTANOS
           <br />
-          METER EN
-          <br />
-          LA CAJA?
+          TU PROYECTO
         </h1>
         <BrushStroke variant="underline" className="mt-2 h-6 w-40" />
         <p className="mt-8 max-w-md text-lg leading-relaxed text-lc-gray">
           Puedes llegar con un briefing perfecto o simplemente decirnos: «tengo
-          una idea». Nosotros empezamos desde ahí.
+          una idea». Empezamos desde ahí.
         </p>
       </div>
 

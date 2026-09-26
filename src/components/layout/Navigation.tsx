@@ -99,12 +99,12 @@ export function Navigation() {
 
           <div className="flex items-center gap-3 md:gap-4">
             <CTA
-              href="/proyectos"
+              href="/contacto"
               variant="primary"
               size="sm"
               className="hidden sm:inline-flex"
             >
-              {MICROCOPY.openBox}
+              {MICROCOPY.tellIdea}
             </CTA>
 
             <Link
@@ -200,8 +200,8 @@ export function Navigation() {
           </nav>
 
           <div className="relative z-10 mt-auto space-y-4">
-            <CTA href="/proyectos" variant="lilac" size="lg" className="w-full">
-              {MICROCOPY.openBox}
+            <CTA href="/contacto" variant="lilac" size="lg" className="w-full">
+              {MICROCOPY.tellIdea}
             </CTA>
             <p className="text-micro text-lc-gray">ESTUDIO CREATIVO · CANARIAS</p>
           </div>

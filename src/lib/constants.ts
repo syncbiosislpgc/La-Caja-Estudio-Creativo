@@ -44,18 +44,32 @@ export const SHOP_CATEGORIES = [
   "OBJECTS",
 ] as const;
 
+/**
+ * Microcopy de interfaz: claro primero.
+ * El tono de marca queda en titulares y claims, no en botones confusos.
+ */
 export const MICROCOPY = {
-  emptyCart: "LA CAJA ESTÁ VACÍA.\nPOR AHORA.",
-  notFound: "ESTO NO ESTABA\nDENTRO DE LA CAJA.",
-  backHome: "VOLVER A METERME",
-  loading: "ABRIENDO LA CAJA...",
-  newsletterTitle: "COSAS QUE SALEN\nDE LA CAJA.",
+  emptyCart: "TU CARRITO ESTÁ VACÍO",
+  emptyCartHint: "Cuando añadas algo, aparecerá aquí.",
+  notFound: "PÁGINA NO ENCONTRADA",
+  notFoundHint: "Este enlace no existe o ya no está disponible.",
+  backHome: "VOLVER AL INICIO",
+  loading: "CARGANDO...",
+  newsletterTitle: "NOVEDADES DEL ESTUDIO",
   newsletterBody:
     "Proyectos, lanzamientos, colaboraciones y alguna cosa que todavía no sabemos qué será.",
-  newsletterCta: "QUIERO ESTAR DENTRO",
-  soldOut: "YA SALIÓ DE LA CAJA.",
-  addedToCart: "YA ESTÁ DENTRO.",
-  openBox: "ABRIR LA CAJA",
+  newsletterCta: "SUSCRIBIRME",
+  soldOut: "AGOTADO",
+  addedToCart: "AÑADIDO AL CARRITO",
+  addToCart: "AÑADIR AL CARRITO",
+  viewCart: "VER CARRITO",
+  viewProjects: "VER PROYECTOS",
+  viewShop: "IR A LA TIENDA",
+  checkout: "FINALIZAR COMPRA",
+  clearCart: "VACIAR CARRITO",
+  removeItem: "QUITAR",
+  keepShopping: "SEGUIR COMPRANDO",
   tellIdea: "CUÉNTANOS TU IDEA",
   haveIdea: "TENGO UNA IDEA",
+  proposeCollab: "PROPONER COLABORACIÓN",
 } as const;

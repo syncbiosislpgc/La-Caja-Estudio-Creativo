@@ -122,10 +122,10 @@ export function ProductPurchase({ product }: { product: Product }) {
             addItem({ product, variantId: variant.id });
           }}
         >
-          {soldOut ? MICROCOPY.soldOut : "METER EN LA CAJA"}
+          {soldOut ? MICROCOPY.soldOut : MICROCOPY.addToCart}
         </CTA>
         <CTA href="/carrito" variant="secondary" size="lg">
-          VER CARRITO
+          {MICROCOPY.viewCart}
         </CTA>
       </div>
 
