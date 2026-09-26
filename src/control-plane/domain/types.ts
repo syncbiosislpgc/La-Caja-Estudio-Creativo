@@ -1,9 +1,12 @@
 /** Domain types — AI-Native Edge & Network Control Plane */
 
 export type Health = "HEALTHY" | "DEGRADED" | "WARNING" | "OFFLINE";
-export type Mode = "SIMULATION" | "CONNECTED" | "NOT_CONFIGURED";
+export type Mode = "SIMULATION" | "CONNECTED" | "NOT_CONFIGURED" | "DISCONNECTED";
 
-export type ClusterType = "kubernetes" | "k3s" | "kubeedge";
+/** Provenance — never mix silently */
+export type InfraSource = "simulation" | "kubernetes" | "k3s" | "kubeedge";
+
+export type ClusterType = "kubernetes" | "k3s" | "kubeedge" | "simulation";
 
 export type WorkloadType =
   | "container"
@@ -64,10 +67,17 @@ export type Cluster = {
   location: string;
   status: Health;
   mode: Mode;
+  source: InfraSource;
   nodeIds: string[];
   labels: Record<string, string>;
   capabilities: string[];
   latencyMs: number;
+  lastSyncAt?: string;
+  connectionError?: string;
+  cpuAllocatable?: string;
+  memoryAllocatable?: string;
+  gpuCount?: number;
+  workloadCount?: number;
 };
 
 export type Node = {
@@ -78,6 +88,7 @@ export type Node = {
   region: string;
   status: Health;
   mode: Mode;
+  source: InfraSource;
   cpuCores: number;
   cpuUsedPct: number;
   ramGi: number;
@@ -98,6 +109,12 @@ export type Node = {
   labels: Record<string, string>;
   taints: string[];
   agentStatus: "online" | "degraded" | "offline";
+  architecture?: string;
+  osImage?: string;
+  kubeletVersion?: string;
+  podCount?: number;
+  allocatableCpu?: string;
+  allocatableMemory?: string;
 };
 
 export type Site = {
@@ -118,6 +135,11 @@ export type Workload = {
   modelId?: string;
   clusterId?: string;
   nodeId?: string;
+  source: InfraSource;
+  namespace?: string;
+  deploymentName?: string;
+  podName?: string;
+  restarts?: number;
   cpu: number;
   memoryGi: number;
   gpu: number;
@@ -133,6 +155,51 @@ export type Workload = {
   e2eLatencyMs: number;
   errorRatePct: number;
   version: string;
+};
+
+/** Provider-agnostic deploy intent (domain → adapter maps to K8s Deployment) */
+export type WorkloadSpec = {
+  name: string;
+  type: WorkloadType;
+  image: string;
+  namespace?: string;
+  replicas?: number;
+  resources: {
+    cpu: string;
+    memory: string;
+    gpu?: number;
+  };
+  network?: {
+    maxLatencyMs?: number;
+    minBandwidthMbps?: number;
+  };
+  placement?: {
+    region?: string;
+    preferredNodeName?: string;
+  };
+  labels?: Record<string, string>;
+};
+
+export type DeploymentResult = {
+  workloadId: string;
+  clusterId: string;
+  namespace: string;
+  deploymentName: string;
+  status: WorkloadStatus;
+  message: string;
+};
+
+export type ClusterConnection = {
+  id: string;
+  name: string;
+  provider: "kubernetes" | "k3s" | "kubeedge";
+  createdAt: string;
+  lastSyncAt?: string;
+  status: Mode;
+  version?: string;
+  error?: string;
+  /** Server-side only path reference — never expose kubeconfig content */
+  hasSecret: boolean;
 };
 
 export type Model = {

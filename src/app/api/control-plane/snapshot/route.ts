@@ -1,10 +1,13 @@
-import { createSeedWorld } from "@/control-plane/domain/seed";
+import { getSnapshot } from "@/control-plane/application/cluster-service";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return Response.json(createSeedWorld(), {
+  const snap = await getSnapshot();
+  return Response.json(snap, {
     headers: {
       "Cache-Control": "no-store",
-      "X-Control-Plane-Mode": "SIMULATION",
+      "X-Control-Plane-Mode": "HYBRID",
     },
   });
 }
