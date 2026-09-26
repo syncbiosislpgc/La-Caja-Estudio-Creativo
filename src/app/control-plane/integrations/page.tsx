@@ -6,16 +6,33 @@ import { modeBadge } from "@/components/control-plane/nav";
 import { cn } from "@/lib/cn";
 
 export default function IntegrationsPage() {
-  const { world } = useControlPlane();
+  const { world, connections } = useControlPlane();
+  const hasReal = connections.some((c) => c.status === "CONNECTED");
+
+  const items = world.integrations.map((i) => {
+    if (
+      (i.id === "int-k8s" || i.id === "int-k3s") &&
+      hasReal
+    ) {
+      return {
+        ...i,
+        status: "CONNECTED" as const,
+        health: "HEALTHY" as const,
+        version: connections[0]?.version ?? i.version,
+      };
+    }
+    return i;
+  });
+
   return (
     <div>
       <PageHeader
         title="Integrations"
-        subtitle="Adapters · never pretend CONNECTED when simulated"
-        actions={<ModePill mode="SIMULATION" />}
+        subtitle="Adapters · REAL only when a cluster is connected"
+        actions={<ModePill mode={hasReal ? "CONNECTED" : "SIMULATION"} />}
       />
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {world.integrations.map((i) => (
+        {items.map((i) => (
           <div key={i.id} className="cp-panel p-4">
             <div className="flex items-start justify-between gap-2">
               <p className="font-semibold">{i.name}</p>

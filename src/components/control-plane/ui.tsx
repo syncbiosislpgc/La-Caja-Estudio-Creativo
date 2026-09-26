@@ -35,6 +35,22 @@ export function ModePill({ mode }: { mode: string }) {
   );
 }
 
+export function SourceBadge({ source }: { source?: string }) {
+  const real = source === "kubernetes" || source === "k3s" || source === "kubeedge";
+  return (
+    <span
+      className={cn(
+        "inline-flex border px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase",
+        real
+          ? "border-emerald-500/50 text-emerald-400"
+          : "border-amber-500/40 text-amber-300",
+      )}
+    >
+      {real ? "REAL" : "SIMULATED"}
+    </span>
+  );
+}
+
 export function MetricTile({
   label,
   value,
