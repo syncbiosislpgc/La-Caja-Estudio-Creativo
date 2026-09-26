@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Control Plane tokens — separate from LA CAJA brand */
+:root {
+  --cp-bg: #07090d;
+  --cp-panel: #0d1118;
+  --cp-panel-2: #121826;
+  --cp-border: #1e2636;
+  --cp-text: #e8edf5;
+  --cp-muted: #8b95a8;
+  --cp-accent: #3d8bfd;
+  --cp-ok: #22c55e;
+  --cp-warn: #eab308;
+  --cp-crit: #ef4444;
+  --cp-cyan: #22d3ee;
+  --font-cp: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.cp-root {
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: var(--font-cp);
+  min-height: 100dvh;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cp-panel {
+  background: var(--cp-panel);
+  border: 1px solid var(--cp-border);
+}
+
+.cp-grid-bg {
+  background-image:
+    linear-gradient(rgba(61, 139, 253, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61, 139, 253, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.cp-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.cp-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.cp-scroll::-webkit-scrollbar-thumb {
+  background: #2a3448;
+  border-radius: 0;
+}
