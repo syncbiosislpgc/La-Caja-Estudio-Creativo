@@ -58,7 +58,8 @@ export function WelcomeIntro() {
     }
 
     let cancelled = false;
-    let tl: { kill: () => void } | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let tl: any;
 
     void (async () => {
       const { gsap } = await import("gsap");
@@ -66,23 +67,25 @@ export function WelcomeIntro() {
 
       const paths = svgRef.current.querySelectorAll("path");
       gsap.set(paths, {
-        strokeDasharray: (_i, el) => (el as SVGPathElement).getTotalLength(),
-        strokeDashoffset: (_i, el) => (el as SVGPathElement).getTotalLength(),
+        strokeDasharray: (_i: number, el: Element) =>
+          (el as SVGPathElement).getTotalLength(),
+        strokeDashoffset: (_i: number, el: Element) =>
+          (el as SVGPathElement).getTotalLength(),
       });
       gsap.set([brandRef.current, claimRef.current], { opacity: 0, y: 16 });
 
-      tl = gsap.timeline({
-        onComplete: () => {
-          window.setTimeout(dismiss, 700);
-        },
-      });
-
-      tl.to(paths, {
-        strokeDashoffset: 0,
-        duration: 1.05,
-        ease: "power2.out",
-        stagger: 0.1,
-      })
+      tl = gsap
+        .timeline({
+          onComplete: () => {
+            window.setTimeout(dismiss, 700);
+          },
+        })
+        .to(paths, {
+          strokeDashoffset: 0,
+          duration: 1.05,
+          ease: "power2.out",
+          stagger: 0.1,
+        })
         .to(
           brandRef.current,
           { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
