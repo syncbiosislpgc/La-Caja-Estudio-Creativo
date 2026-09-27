@@ -24,9 +24,20 @@ Simulation Mode stays available. Local kubeconfig paste (`REAL_OPS`) stays **dis
 See `CLOUD_LAB_COSTS.md`. **Primary: Oracle Cloud Always Free Ampere A1 (2 OCPU / 12 GB ARM64).**  
 GCP e2-micro is a fallback only (1 GB RAM — too tight for a comfortable demo).
 
+## Oracle MCP (Cursor)
+
+This repo includes `.cursor/mcp.json` with:
+
+- `oracle-oci-cloud` → `uvx oracle.oci-cloud-mcp-server@latest`
+- `oracle-oci-compute` → `uvx oracle.oci-compute-mcp-server@latest`
+
+Requires `~/.oci/config` (or secrets → `infra/cloud-lab/scripts/configure-oci-from-env.sh`).
+
+Enable under **Cursor Settings → MCP** if the servers do not appear automatically.
+
 ## What you must do (human gate)
 
-This Cloud Agent has **no OCI credentials** (`~/.oci` missing). Nothing was provisioned in Oracle.
+This Cloud Agent has **no OCI credentials** (`~/.oci` missing) until you add secrets. Nothing was provisioned in Oracle yet.
 
 ### Step A — Create OCI Always Free account
 
