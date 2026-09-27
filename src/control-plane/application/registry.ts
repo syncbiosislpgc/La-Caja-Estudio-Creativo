@@ -8,6 +8,7 @@ import type {
 } from "@/control-plane/domain/types";
 import type { InfrastructureProvider } from "@/control-plane/infrastructure/provider";
 import { KubernetesInfrastructureProvider } from "@/control-plane/infrastructure/kubernetes/kubernetes-provider";
+import { RemoteOpsInfrastructureProvider } from "@/control-plane/infrastructure/remote-ops/remote-ops-provider";
 import { SimulationInfrastructureProvider } from "@/control-plane/infrastructure/simulation/simulation-provider";
 import {
   listConnections,
@@ -16,7 +17,11 @@ import {
   type StoredConnection,
 } from "@/control-plane/persistence/cluster-store";
 import { cpLog } from "@/control-plane/application/logger";
-import { realOpsEnabled } from "@/control-plane/security/config";
+import {
+  getRemoteOpsConfig,
+  realOpsEnabled,
+  remoteOpsEnabled,
+} from "@/control-plane/security/config";
 
 let simProvider = new SimulationInfrastructureProvider();
 
@@ -31,11 +36,21 @@ async function makeK8sProvider(c: StoredConnection) {
   });
 }
 
+function makeRemoteProvider() {
+  const cfg = getRemoteOpsConfig();
+  if (!cfg) return null;
+  return new RemoteOpsInfrastructureProvider(cfg);
+}
+
 export async function getProviders(): Promise<InfrastructureProvider[]> {
-  if (!realOpsEnabled()) return [simProvider];
-  const conns = await listConnections();
-  const real = await Promise.all(conns.map((c) => makeK8sProvider(c)));
-  return [simProvider, ...real];
+  const providers: InfrastructureProvider[] = [simProvider];
+  const remote = makeRemoteProvider();
+  if (remote) providers.push(remote);
+  if (realOpsEnabled()) {
+    const conns = await listConnections();
+    providers.push(...(await Promise.all(conns.map((c) => makeK8sProvider(c)))));
+  }
+  return providers;
 }
 
 export function getSimulationProvider() {
@@ -52,6 +67,7 @@ export async function buildHybridSnapshot(): Promise<
     connections: ReturnType<typeof toPublicConnection>[];
     telemetryNote: string;
     realOpsEnabled: boolean;
+    remoteOpsEnabled: boolean;
   }
 > {
   const simWorld = createSeedWorld();
@@ -62,6 +78,44 @@ export async function buildHybridSnapshot(): Promise<
   const realWorkloads: Workload[] = [];
   const realEvents: DomainEvent[] = [];
   let conns: StoredConnection[] = [];
+
+  const remote = makeRemoteProvider();
+  if (remote) {
+    try {
+      const cluster = await remote.getCluster(remote.id);
+      if (cluster) realClusters.push(cluster);
+      if (cluster?.mode === "CONNECTED") {
+        realNodes.push(...(await remote.getNodes(remote.id)));
+        realWorkloads.push(...(await remote.getWorkloads(remote.id)));
+        realEvents.push(...(await remote.getEvents(remote.id)));
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "remote sync failed";
+      cpLog("error", {
+        provider: "remote-ops",
+        cluster: remote.name,
+        operation: "hybrid_snapshot",
+        error: message,
+      });
+      realClusters.push({
+        id: remote.id,
+        name: remote.name,
+        provider: "k3s",
+        version: "unknown",
+        region: getRemoteOpsConfig()?.region ?? "oci-free",
+        country: "—",
+        location: "Cloud lab (remote-ops)",
+        status: "OFFLINE",
+        mode: "DISCONNECTED",
+        source: "kubernetes",
+        nodeIds: [],
+        labels: {},
+        capabilities: [],
+        latencyMs: 0,
+        connectionError: message,
+      });
+    }
+  }
 
   if (realOpsEnabled()) {
     conns = await listConnections();
@@ -127,15 +181,19 @@ export async function buildHybridSnapshot(): Promise<
     },
   };
 
+  const remoteCfg = getRemoteOpsConfig();
   return {
     ...merged,
     connections: conns.map(toPublicConnection),
     realOpsEnabled: realOpsEnabled(),
-    telemetryNote: !realOpsEnabled()
-      ? "Real Kubernetes ops DISABLED on this host (safe public mode). Simulation only."
-      : realClusters.length > 0
-        ? "REAL clusters: telemetry from Kubernetes API (no invented %). Advanced metrics: Not configured (Prometheus)."
-        : "No REAL clusters connected — showing SIMULATION only.",
+    remoteOpsEnabled: Boolean(remoteCfg),
+    telemetryNote: remoteCfg
+      ? "REAL cloud lab via remote-ops (Kubernetes API). Live CPU%: Not configured unless Metrics Server installed on lab."
+      : realOpsEnabled()
+        ? realClusters.length > 0
+          ? "REAL clusters: telemetry from Kubernetes API (no invented %). Advanced metrics: Not configured."
+          : "No REAL clusters connected — showing SIMULATION only."
+        : "Real Kubernetes ops DISABLED. Simulation-only. Configure REMOTE_OPS for cloud lab.",
   };
 }
 
@@ -145,9 +203,13 @@ export async function getProviderForCluster(
   if (clusterId.startsWith("cls-") || clusterId === "provider-simulation") {
     return simProvider;
   }
+  const remote = makeRemoteProvider();
+  if (remote && (clusterId === remote.id || clusterId.startsWith("remote-"))) {
+    return remote;
+  }
   if (!realOpsEnabled()) {
     const sim = await simProvider.getCluster(clusterId);
-    return sim ? simProvider : null;
+    return sim ? simProvider : remote && clusterId === remote.id ? remote : null;
   }
   const conns = await listConnections();
   const c = conns.find((x) => x.id === clusterId);
@@ -157,3 +219,5 @@ export async function getProviderForCluster(
   }
   return makeK8sProvider(c);
 }
+
+export { remoteOpsEnabled };

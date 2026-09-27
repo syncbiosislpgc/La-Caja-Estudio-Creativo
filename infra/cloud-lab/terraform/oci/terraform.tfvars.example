@@ -1,0 +1,14 @@
+tenancy_ocid     = "ocid1.tenancy.oc1..aaaa..."
+user_ocid        = "ocid1.user.oc1..aaaa..."
+fingerprint      = "aa:bb:cc:..."
+private_key_path = "~/.oci/oci_api_key.pem"
+region           = "eu-frankfurt-1"
+compartment_ocid = "ocid1.tenancy.oc1..aaaa..." # or a compartment OCID
+
+ssh_public_key = "ssh-ed25519 AAAA... you@laptop"
+ssh_cidr       = "203.0.113.10/32" # YOUR IP
+
+# Stay inside Always Free Ampere limits (2026): 2 OCPU / 12 GB
+instance_ocpus     = 2
+instance_memory_gb = 12
+boot_volume_gb     = 50

@@ -10,7 +10,8 @@ import { cn } from "@/lib/cn";
 
 export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { world, realOpsEnabled, session, refreshSession } = useControlPlane();
+  const { world, realOpsEnabled, remoteOpsEnabled, session, refreshSession } =
+    useControlPlane();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
 
@@ -125,12 +126,18 @@ export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="cp-scroll cp-grid-bg flex-1 overflow-auto p-3 pb-8 sm:p-4 md:p-5">
-          {!realOpsEnabled ? (
+          {remoteOpsEnabled ? (
+            <div className="mb-4 rounded-[var(--cp-radius)] border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 text-[12px] text-emerald-100">
+              <strong className="font-semibold">Cloud lab connected path.</strong>{" "}
+              Real nodes/workloads via remote-ops (K3s). Local kubeconfig paste remains
+              disabled on public hosts.
+            </div>
+          ) : !realOpsEnabled ? (
             <div className="mb-4 rounded-[var(--cp-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-100">
               <strong className="font-semibold">Simulation-safe host.</strong>{" "}
-              Real Kubernetes connect/deploy/delete is disabled here (public/Vercel
-              default). Use a local lab with{" "}
-              <span className="cp-mono">CONTROL_PLANE_REAL_OPS_ENABLED=true</span>.
+              Real Kubernetes ops disabled. Provision the OCI cloud lab and set{" "}
+              <span className="cp-mono">CONTROL_PLANE_REMOTE_OPS_*</span> on Vercel — see{" "}
+              <span className="cp-mono">docs/CLOUD_LAB_DEPLOYMENT.md</span>.
             </div>
           ) : null}
           {children}

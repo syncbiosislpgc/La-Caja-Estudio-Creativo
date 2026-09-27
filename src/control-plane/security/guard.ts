@@ -1,6 +1,11 @@
 import { appendAudit } from "./audit";
 import { readSessionFromRequest, type SessionUser } from "./auth";
-import { realOpsEnabled, securityStatus } from "./config";
+import {
+  getRemoteOpsConfig,
+  realInfrastructureAvailable,
+  realOpsEnabled,
+  securityStatus,
+} from "./config";
 import { can, type Permission } from "./rbac";
 import { clientKey, rateLimit } from "./rate-limit";
 
@@ -33,14 +38,42 @@ export async function requireRealOps(
   req: Request,
   permission: Permission,
 ): Promise<SessionUser> {
+  // Local kubeconfig path only (never on public Vercel by default).
   if (!realOpsEnabled()) {
     throw new GuardError(
-      "Real Kubernetes operations are disabled on this host. Run the Control Plane locally with CONTROL_PLANE_REAL_OPS_ENABLED=true. Simulation Mode remains available.",
+      "Local kubeconfig real-ops are disabled on this host. Use the cloud lab (REMOTE_OPS) or enable CONTROL_PLANE_REAL_OPS_ENABLED locally.",
       403,
       "REAL_OPS_DISABLED",
     );
   }
   return requireSession(req, permission);
+}
+
+/** Mutations against real infrastructure (local kubeconfig OR remote-ops cloud lab). */
+export async function requireInfrastructureWrite(
+  req: Request,
+  permission: Permission,
+): Promise<SessionUser> {
+  if (!realInfrastructureAvailable()) {
+    throw new GuardError(
+      "No real infrastructure backend available. Simulation Mode only. Configure CONTROL_PLANE_REMOTE_OPS_* for the cloud lab, or local REAL_OPS for kind.",
+      403,
+      "REAL_OPS_DISABLED",
+    );
+  }
+  if (remoteOnlyMisconfigured()) {
+    throw new GuardError(
+      "REMOTE_OPS_ENABLED but URL/token missing or invalid (token min 32 chars).",
+      503,
+      "REMOTE_OPS_MISCONFIGURED",
+    );
+  }
+  return requireSession(req, permission);
+}
+
+function remoteOnlyMisconfigured() {
+  const { remoteOpsEnabled } = securityStatus();
+  return remoteOpsEnabled && !getRemoteOpsConfig() && !realOpsEnabled();
 }
 
 export function enforceRateLimit(req: Request, suffix: string, limit: number, windowMs: number) {

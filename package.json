@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "lab:up": "bash scripts/control-plane-lab/up.sh",
     "lab:down": "bash scripts/control-plane-lab/down.sh",
-    "lab:e2e": "bash scripts/control-plane-lab/e2e-real.sh"
+    "lab:e2e": "bash scripts/control-plane-lab/e2e-real.sh",
+    "cloud-lab:e2e": "bash infra/cloud-lab/scripts/e2e-remote.sh"
   },
   "dependencies": {
     "@kubernetes/client-node": "^2.0.0",

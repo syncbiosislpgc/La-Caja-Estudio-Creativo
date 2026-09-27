@@ -8,6 +8,8 @@ import { CpButton, ModePill, PageHeader } from "@/components/control-plane/ui";
 type SecurityPayload = {
   security: {
     realOpsEnabled: boolean;
+    remoteOpsEnabled?: boolean;
+    remoteOpsConfigured?: boolean;
     vercel: boolean;
     secretKeyConfigured: boolean;
     adminPasswordConfigured: boolean;
@@ -61,9 +63,19 @@ export default function SecurityPage() {
           </p>
           <ul className="space-y-2 text-[12px]">
             <li>
-              Real ops:{" "}
+              Local kubeconfig ops:{" "}
               <strong className={s?.realOpsEnabled ? "text-emerald-400" : "text-amber-300"}>
                 {s?.realOpsEnabled ? "ENABLED" : "DISABLED"}
+              </strong>
+            </li>
+            <li>
+              Cloud lab remote-ops:{" "}
+              <strong
+                className={
+                  s?.remoteOpsConfigured ? "text-emerald-400" : "text-amber-300"
+                }
+              >
+                {s?.remoteOpsConfigured ? "CONFIGURED" : "NOT CONFIGURED"}
               </strong>
             </li>
             <li>Auth mode: {s?.authMode ?? "—"}</li>

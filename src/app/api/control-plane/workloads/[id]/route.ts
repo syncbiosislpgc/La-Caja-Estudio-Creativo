@@ -3,10 +3,13 @@ import { appendAudit } from "@/control-plane/security/audit";
 import {
   enforceRateLimit,
   jsonError,
-  requireRealOps,
+  requireInfrastructureWrite,
   requireSession,
 } from "@/control-plane/security/guard";
-import { realOpsEnabled } from "@/control-plane/security/config";
+import {
+  realInfrastructureAvailable,
+  realOpsEnabled,
+} from "@/control-plane/security/config";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +17,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, ctx: Ctx) {
   try {
-    if (realOpsEnabled()) {
+    if (realInfrastructureAvailable()) {
       await requireSession(req, "workload:read");
     }
     const { id } = await ctx.params;
@@ -37,7 +40,7 @@ export async function GET(req: Request, ctx: Ctx) {
 export async function DELETE(req: Request, ctx: Ctx) {
   try {
     enforceRateLimit(req, "wl-delete", 15, 60_000);
-    const user = await requireRealOps(req, "workload:delete");
+    const user = await requireInfrastructureWrite(req, "workload:delete");
     const { id } = await ctx.params;
     const url = new URL(req.url);
     const clusterId = url.searchParams.get("cluster") ?? id.split(":")[0];
@@ -56,7 +59,7 @@ export async function DELETE(req: Request, ctx: Ctx) {
 export async function POST(req: Request, ctx: Ctx) {
   try {
     enforceRateLimit(req, "wl-mutate", 20, 60_000);
-    const user = await requireRealOps(req, "workload:mutate");
+    const user = await requireInfrastructureWrite(req, "workload:mutate");
     const { id } = await ctx.params;
     const url = new URL(req.url);
     const clusterId = url.searchParams.get("cluster") ?? id.split(":")[0];

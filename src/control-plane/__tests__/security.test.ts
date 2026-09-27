@@ -11,7 +11,12 @@ import {
 } from "@/control-plane/security/policy";
 import { encryptSecret, decryptSecret, isEncryptedPayload } from "@/control-plane/security/crypto";
 import { rateLimit } from "@/control-plane/security/rate-limit";
-import { realOpsEnabled } from "@/control-plane/security/config";
+import {
+  getRemoteOpsConfig,
+  realInfrastructureAvailable,
+  realOpsEnabled,
+  remoteOpsEnabled,
+} from "@/control-plane/security/config";
 
 describe("RBAC", () => {
   it("Viewer cannot deploy", () => {
@@ -119,5 +124,33 @@ describe("Real ops gate", () => {
     delete process.env.CONTROL_PLANE_REAL_OPS_ENABLED;
     expect(realOpsEnabled()).toBe(false);
     if (prev !== undefined) process.env.CONTROL_PLANE_REAL_OPS_ENABLED = prev;
+  });
+});
+
+describe("Remote ops gate", () => {
+  it("defaults to disabled and unconfigured", () => {
+    const prevE = process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED;
+    const prevU = process.env.CONTROL_PLANE_REMOTE_OPS_URL;
+    const prevT = process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN;
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED;
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_URL;
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN;
+    expect(remoteOpsEnabled()).toBe(false);
+    expect(getRemoteOpsConfig()).toBeNull();
+    if (prevE !== undefined) process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED = prevE;
+    if (prevU !== undefined) process.env.CONTROL_PLANE_REMOTE_OPS_URL = prevU;
+    if (prevT !== undefined) process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN = prevT;
+  });
+
+  it("configures when enabled with url+token", () => {
+    process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED = "true";
+    process.env.CONTROL_PLANE_REMOTE_OPS_URL = "https://cp-lab.example.com";
+    process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN = "t".repeat(32);
+    expect(remoteOpsEnabled()).toBe(true);
+    expect(getRemoteOpsConfig()?.baseUrl).toBe("https://cp-lab.example.com");
+    expect(realInfrastructureAvailable()).toBe(true);
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED;
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_URL;
+    delete process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN;
   });
 });

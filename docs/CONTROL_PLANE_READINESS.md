@@ -1,8 +1,8 @@
 # Control Plane Readiness Report
 
-**Fecha:** 2026-09-27  
-**Rama:** `cursor/control-plane-audit-security-lab-5755`  
-**Alcance:** Auditoría, seguridad P0, laboratorio automatizado, tests, demo comercial.
+**Fecha:** 2026-09-27 (actualizado cloud lab)  
+**Rama:** `cursor/cloud-lab-remote-ops-5755`  
+**Alcance:** Auditoría, seguridad P0, laboratorio automatizado, **cloud lab remote-ops (IaC)**, tests, demo comercial.
 
 > Este informe distingue explícitamente entre **simulación**, **código implementado**, **probado en este entorno** y **pendiente**.
 
@@ -69,8 +69,13 @@ Leyenda:
 | Edge Agent | NOT IMPLEMENTED | Fase posterior |
 | KubeEdge adapter | NOT IMPLEMENTED | Rechazado explícitamente |
 | Lab scripts kind | IMPLEMENTED & NOT TESTED | `scripts/control-plane-lab/` (Docker ausente aquí) |
-| E2E real script | IMPLEMENTED & NOT TESTED | `e2e-real.sh` — no ejecutado sin cluster |
+| E2E real script (kind) | IMPLEMENTED & NOT TESTED | `e2e-real.sh` — no ejecutado sin cluster |
 | Real ops disabled on Vercel | IMPLEMENTED & TESTED | Gate default + unit |
+| remote-ops backend | IMPLEMENTED & NOT TESTED | `services/remote-ops` — sin VM |
+| RemoteOps provider (Vercel→lab) | IMPLEMENTED & NOT TESTED | gated by `REMOTE_OPS_*` |
+| OCI Terraform Always Free | IMPLEMENTED & NOT TESTED | sin credenciales OCI |
+| Cloudflare Tunnel automation | PARTIALLY IMPLEMENTED | script + runbook; token humano |
+| E2E cloud remoto | NOT IMPLEMENTED (blocked) | pendiente aprovisionar lab |
 
 ---
 
@@ -107,19 +112,36 @@ Informe dedicado: `docs/CONTROL_PLANE_SECURITY.md`
 
 ---
 
-## 4. Laboratorio Kubernetes (P1)
+## 4. Laboratorio Kubernetes
 
-Scripts:
+### 4a. Local kind (dev laptop)
 
 | Script | Propósito |
 |--------|-----------|
-| `scripts/control-plane-lab/up.sh` | kind (3 nodos), namespace, SA+RBAC mínima, seed nginx, metrics-server best-effort, export kubeconfig |
-| `scripts/control-plane-lab/down.sh` | destruye el cluster lab |
-| `scripts/control-plane-lab/e2e-real.sh` | recorrido login→connect→discover→deploy→kubectl verify→restart→scale→delete |
+| `scripts/control-plane-lab/up.sh` | kind, namespace, SA+RBAC, seed, metrics-server best-effort |
+| `scripts/control-plane-lab/down.sh` | destruye kind |
+| `scripts/control-plane-lab/e2e-real.sh` | E2E local REAL_OPS |
 
-**Estado en este host:** Docker socket ausente → scripts **no ejecutados**.
+**Estado en Cloud Agent:** Docker ausente → **no ejecutado**.
 
-Arquitectura remota (futuro piloto): Control Plane no debe recibir kubeconfigs en Vercel. Usar agente saliente / tunnel mTLS / Workload Identity. Documentado en `DEMO_GUIDE.md`.
+### 4b. Cloud lab €0 (Oracle Always Free + remote-ops) — NUEVO
+
+| Artefacto | Propósito |
+|-----------|-----------|
+| `docs/CLOUD_LAB_COSTS.md` | Comparativa proveedores / riesgos de factura |
+| `docs/CLOUD_LAB_DEPLOYMENT.md` | Runbook OCI + Tunnel + Vercel env |
+| `infra/cloud-lab/terraform/oci/` | IaC Always Free Ampere A1 |
+| `infra/cloud-lab/scripts/bootstrap-lab.sh` | K3s + remote-ops (+ cloudflared) |
+| `services/remote-ops/` | Backend autorizado (127.0.0.1) → K3s |
+| `RemoteOpsInfrastructureProvider` | Control Plane → HTTPS remote-ops |
+| `CONTROL_PLANE_REMOTE_OPS_*` | Env Vercel (sin kubeconfig) |
+
+**Arquitectura:** Vercel **nunca** habla con `:6443`. Solo con `remote-ops` detrás de Cloudflare Tunnel (salida desde la VM).
+
+**Estado de aprovisionamiento:** **BLOQUEADO — sin credenciales OCI en este entorno.**  
+Código + Terraform + scripts listos. Requiere intervención humana (cuenta OCI + `terraform apply` + Tunnel). Ver checklist en `CLOUD_LAB_DEPLOYMENT.md`.
+
+**E2E cloud:** script `infra/cloud-lab/scripts/e2e-remote.sh` — **NO ejecutado** (lab no desplegado).
 
 ---
 

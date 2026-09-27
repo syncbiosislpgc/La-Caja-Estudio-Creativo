@@ -5,7 +5,7 @@ import { getAllowedNamespace } from "@/control-plane/security/config";
 import {
   enforceRateLimit,
   jsonError,
-  requireRealOps,
+  requireInfrastructureWrite,
 } from "@/control-plane/security/guard";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     enforceRateLimit(req, "deploy", 10, 60_000);
-    const user = await requireRealOps(req, "workload:deploy");
+    const user = await requireInfrastructureWrite(req, "workload:deploy");
     const { id } = await ctx.params;
     const body = (await req.json()) as WorkloadSpec & { useScheduler?: boolean };
     if (!body.name || !body.image) {

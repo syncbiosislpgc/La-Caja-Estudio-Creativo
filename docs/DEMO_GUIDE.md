@@ -2,8 +2,8 @@
 
 ## Before you start
 
-- Do **not** enable real ops on a public Vercel URL.
-- Use a laptop/VM with Docker + kind + kubectl.
+- Prefer the **cloud lab** (`docs/CLOUD_LAB_DEPLOYMENT.md`) so demos do not need your laptop.
+- Do **not** enable local kubeconfig `REAL_OPS` on a public Vercel URL.
 - Keep LA CAJA at `/` untouched; demo lives under `/control-plane`.
 
 ## Escenario A — Simulación (siempre)

@@ -26,7 +26,13 @@ type HybridSnapshot = WorldSnapshot & {
   connections?: ClusterConnection[];
   telemetryNote?: string;
   realOpsEnabled?: boolean;
-  security?: { note?: string; realOpsEnabled?: boolean };
+  remoteOpsEnabled?: boolean;
+  security?: {
+    note?: string;
+    realOpsEnabled?: boolean;
+    remoteOpsEnabled?: boolean;
+    remoteOpsConfigured?: boolean;
+  };
 };
 
 type SessionInfo = {
@@ -40,6 +46,7 @@ type CpContext = {
   connections: ClusterConnection[];
   telemetryNote: string;
   realOpsEnabled: boolean;
+  remoteOpsEnabled: boolean;
   session: SessionInfo;
   refreshSession: () => Promise<void>;
   sourceFilter: "ALL" | "REAL" | "SIMULATION";
@@ -74,6 +81,7 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
   const [connections, setConnections] = useState<ClusterConnection[]>([]);
   const [telemetryNote, setTelemetryNote] = useState("");
   const [realOpsEnabled, setRealOpsEnabled] = useState(false);
+  const [remoteOpsEnabled, setRemoteOpsEnabled] = useState(false);
   const [session, setSession] = useState<SessionInfo>({ authenticated: false });
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "REAL" | "SIMULATION">(
     "ALL",
@@ -141,6 +149,9 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
       setConnections(data.connections ?? []);
       setTelemetryNote(data.telemetryNote ?? "");
       setRealOpsEnabled(Boolean(data.realOpsEnabled ?? data.security?.realOpsEnabled));
+      setRemoteOpsEnabled(
+        Boolean(data.remoteOpsEnabled ?? data.security?.remoteOpsConfigured),
+      );
     } catch {
       /* keep local */
     }
@@ -211,6 +222,7 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
       connections,
       telemetryNote,
       realOpsEnabled,
+      remoteOpsEnabled,
       session,
       refreshSession,
       sourceFilter,
@@ -231,6 +243,7 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
       connections,
       telemetryNote,
       realOpsEnabled,
+      remoteOpsEnabled,
       session,
       refreshSession,
       sourceFilter,

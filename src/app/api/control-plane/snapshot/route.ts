@@ -17,8 +17,10 @@ export async function GET() {
     {
       headers: {
         "Cache-Control": "no-store",
-        "X-Control-Plane-Mode": snap.realOpsEnabled ? "HYBRID" : "SIMULATION",
+        "X-Control-Plane-Mode":
+          snap.realOpsEnabled || snap.remoteOpsEnabled ? "HYBRID" : "SIMULATION",
         "X-Control-Plane-Real-Ops": snap.realOpsEnabled ? "1" : "0",
+        "X-Control-Plane-Remote-Ops": snap.remoteOpsEnabled ? "1" : "0",
       },
     },
   );

@@ -69,16 +69,55 @@ export function getDemoCredentials(): {
   };
 }
 
+/**
+ * Remote cloud lab path (Vercel → remote-ops over HTTPS Tunnel).
+ * Independent from local kubeconfig REAL_OPS (which stays off on Vercel).
+ */
+export type RemoteOpsClientConfig = {
+  baseUrl: string;
+  token: string;
+  clusterId: string;
+  clusterName: string;
+  region: string;
+};
+
+export function remoteOpsEnabled(): boolean {
+  return process.env.CONTROL_PLANE_REMOTE_OPS_ENABLED === "true";
+}
+
+export function getRemoteOpsConfig(): RemoteOpsClientConfig | null {
+  if (!remoteOpsEnabled()) return null;
+  const baseUrl = process.env.CONTROL_PLANE_REMOTE_OPS_URL?.replace(/\/$/, "");
+  const token = process.env.CONTROL_PLANE_REMOTE_OPS_TOKEN;
+  if (!baseUrl || !token || token.length < 32) return null;
+  return {
+    baseUrl,
+    token,
+    clusterId: process.env.CONTROL_PLANE_REMOTE_CLUSTER_ID ?? "remote-k3s-lab",
+    clusterName: process.env.CONTROL_PLANE_REMOTE_CLUSTER_NAME ?? "cloud-lab-k3s",
+    region: process.env.CONTROL_PLANE_REMOTE_CLUSTER_REGION ?? "oci-free",
+  };
+}
+
+export function realInfrastructureAvailable(): boolean {
+  return realOpsEnabled() || Boolean(getRemoteOpsConfig());
+}
+
 export function securityStatus() {
+  const remote = getRemoteOpsConfig();
   return {
     realOpsEnabled: realOpsEnabled(),
+    remoteOpsEnabled: remoteOpsEnabled(),
+    remoteOpsConfigured: Boolean(remote),
     vercel: isVercelRuntime(),
     secretKeyConfigured: Boolean(getSecretKey()),
     adminPasswordConfigured: Boolean(getAdminPassword()),
     allowedNamespace: getAllowedNamespace(),
     authMode: "local-session" as const,
-    note: realOpsEnabled()
-      ? "Real Kubernetes ops enabled (lab)."
-      : "Real Kubernetes ops DISABLED. Simulation-only on this host. Set CONTROL_PLANE_REAL_OPS_ENABLED=true for local lab.",
+    note: remote
+      ? "Remote cloud lab enabled (Vercel → remote-ops → K3s). Local kubeconfig paste still gated."
+      : realOpsEnabled()
+        ? "Local Kubernetes ops enabled (lab kubeconfig)."
+        : "Real Kubernetes ops DISABLED. Simulation-only. Enable REMOTE_OPS (cloud lab) or REAL_OPS (local kind).",
   };
 }

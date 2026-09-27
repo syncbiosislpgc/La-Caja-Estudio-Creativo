@@ -6,7 +6,10 @@ import {
   requireRealOps,
   requireSession,
 } from "@/control-plane/security/guard";
-import { realOpsEnabled } from "@/control-plane/security/config";
+import {
+  realInfrastructureAvailable,
+  realOpsEnabled,
+} from "@/control-plane/security/config";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +17,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, ctx: Ctx) {
   try {
-    if (realOpsEnabled()) {
+    if (realInfrastructureAvailable()) {
       await requireSession(req, "cluster:read");
     }
     const { id } = await ctx.params;
