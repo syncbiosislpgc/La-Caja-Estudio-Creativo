@@ -1,47 +1,60 @@
-# AI-Native Edge & Network Control Plane — Architecture Assessment
+# Control Plane Architecture (Hybrid)
 
-## Existing repository (LA CAJA)
+## Routes (unchanged product split)
 
-| Area | Estado |
-|------|--------|
-| Stack | Next.js 16 App Router, TypeScript, Tailwind 4, GSAP |
-| Auth | Ninguna (sitio marketing) |
-| Database | Ninguna |
-| Frontend | Site group `(site)` + Sanity Studio |
-| Deploy | Vercel temporary / Hobby |
-| Reutilizable | Next.js monorepo, Tailwind, Vercel pipeline |
+| Path | Product |
+|------|---------|
+| `/` | LA CAJA — **do not modify** |
+| `/control-plane/*` | AI-Native Edge & Network Control Plane |
+| `/api/control-plane/*` | Control Plane APIs |
 
-**No reescribir** LA CAJA. El Control Plane vive en una **ruta paralela**.
-
-## Decisión de montaje
+## Abstraction
 
 ```
-/                     → LA CAJA (estudio creativo)
-/control-plane/*      → AI-Native Edge & Network Control Plane
-/api/control-plane/*  → APIs del control plane
+Domain / Application
+        ↓
+InfrastructureProvider
+   ├── SimulationInfrastructureProvider
+   ├── KubernetesInfrastructureProvider   ← REAL
+   ├── K3s (same client, provider label)
+   └── KubeEdge (NOT_CONFIGURED stub)
 ```
 
-## Arquitectura objetivo (incremental)
+Domain code **never** imports `@kubernetes/client-node`.
 
-Modular monolith dentro de Next.js:
+## Sources
 
-- **Domain** (`src/control-plane/domain`) — clusters, nodes, workloads, network, scheduler, events
-- **Adapters** — Simulation (ahora); K8s/K3s/KubeEdge/OVS (después)
-- **API** — Route Handlers App Router
-- **Store** — In-memory + seed determinista (Fase 1); SQLite/Postgres después
-- **UI** — Layout desktop-first tipo NOC, dark, denso, sin look “SaaS genérico”
-- **Auth/RBAC** — Stub con roles (Platform Admin / Viewer…); OIDC real en fases posteriores
+Every cluster/node/workload has:
 
-## Fases
+- `source: simulation | kubernetes | k3s | kubeedge`
+- `mode: SIMULATION | CONNECTED | DISCONNECTED | NOT_CONFIGURED`
 
-1. **Ahora:** shell + domain + API + overview + clusters/nodes/workloads + topology + scheduler explain + simulation lab + demo migración  
-2. Adapters K8s reales + Edge Agent  
-3. Scheduler avanzado + models + OTel  
-4. SDN/OVS  
-5. Digital twin scale + RAN/MEC  
-6. Auto-migración predictiva  
-7. Hardening seguridad
+UI badges: **REAL** / **SIMULATED**. Never mix silently.
 
-## Regla de honestidad
+## Persistence
 
-Todo lo no conectado a infra real se marca **SIMULATION MODE**.
+Server-only:
+
+- `data/control-plane/connections.json` — metadata
+- `data/control-plane/secrets/<id>.kubeconfig` — kubeconfig (gitignored, mode 0600)
+
+Kubeconfig is **never** returned by APIs or sent to the browser after connect.
+
+## Snapshot
+
+`GET /api/control-plane/snapshot` merges simulation seed + discovered real inventory.
+
+## Scheduler
+
+Control Plane scheduler scores nodes (explainable) then Kubernetes Adapter deploys with optional `nodeName`. It does **not** replace the in-cluster kube-scheduler long-term; it is a placement intelligence layer.
+
+## Telemetry honesty
+
+REAL nodes: capacity/allocatable/pods from Kubernetes API.  
+Live CPU/memory %: **Not configured** until Prometheus/metrics-server.
+
+## Docs
+
+- `docs/KUBERNETES_ADAPTER.md`
+- `docs/LOCAL_DEMO.md`
+- `docs/CONTROL_PLANE_HYBRID_PLAN.md`

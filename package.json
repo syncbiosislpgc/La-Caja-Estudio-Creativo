@@ -6,9 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lab:up": "bash scripts/control-plane-lab/up.sh",
+    "lab:down": "bash scripts/control-plane-lab/down.sh",
+    "lab:e2e": "bash scripts/control-plane-lab/e2e-real.sh"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^2.0.0",
     "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^6.16.0",
     "clsx": "^2.1.1",
@@ -31,7 +37,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.2"
   },
   "packageManager": "pnpm@10.33.3",
   "description": "LA CAJA | Estudio Creativo — universo digital"

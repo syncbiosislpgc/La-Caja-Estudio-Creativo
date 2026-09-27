@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useControlPlane } from "@/components/control-plane/ControlPlaneProvider";
-import { ModePill, PageHeader } from "@/components/control-plane/ui";
+import {
+  EntityCard,
+  ModePill,
+  PageHeader,
+  SourceBadge,
+} from "@/components/control-plane/ui";
 
 export default function WorkloadsPage() {
   const { world } = useControlPlane();
@@ -10,49 +15,96 @@ export default function WorkloadsPage() {
     <div>
       <PageHeader
         title="Workloads"
-        subtitle="Containers · AI inference · edge apps · batch"
+        subtitle="SIMULATED lab workloads + REAL Deployments from connected clusters"
         actions={<ModePill mode="SIMULATION" />}
       />
-      <div className="cp-panel overflow-x-auto">
+
+      <div className="grid gap-3 md:hidden">
+        {world.workloads.map((w) => {
+          const node = world.nodes.find((n) => n.id === w.nodeId);
+          const real = w.source !== "simulation";
+          const breach = !real && w.e2eLatencyMs > w.maxLatencyMs;
+          return (
+            <EntityCard
+              key={w.id}
+              href={`/control-plane/workloads/${encodeURIComponent(w.id)}`}
+              title={w.name}
+              subtitle={w.image}
+              badge={<SourceBadge source={w.source} />}
+              meta={[
+                { label: "Type", value: w.type },
+                { label: "Status", value: w.status },
+                { label: "Namespace", value: w.namespace ?? "—" },
+                { label: "Node", value: node?.name ?? "—" },
+              ]}
+              footer={
+                <p
+                  className={`cp-mono text-[11px] ${breach ? "text-[var(--cp-crit)]" : "text-[var(--cp-muted)]"}`}
+                >
+                  {real
+                    ? `${w.restarts ?? 0} restarts`
+                    : `E2E ${w.e2eLatencyMs.toFixed(1)}ms`}
+                </p>
+              }
+            />
+          );
+        })}
+      </div>
+
+      <div className="cp-panel cp-hide-mobile overflow-x-auto">
         <table className="w-full min-w-[1000px] text-left text-[12px]">
           <thead className="text-[10px] uppercase tracking-wider text-[var(--cp-muted)]">
             <tr className="border-b border-[var(--cp-border)]">
-              {["Workload", "Type", "Status", "Node", "E2E", "Infer", "Net", "RPS", "SLA"].map(
-                (h) => (
-                  <th key={h} className="px-3 py-2 font-medium">
-                    {h}
-                  </th>
-                ),
-              )}
+              {[
+                "Workload",
+                "Source",
+                "Type",
+                "Status",
+                "Namespace",
+                "Node",
+                "E2E / Restarts",
+              ].map((h) => (
+                <th key={h} className="px-3 py-2 font-medium">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {world.workloads.map((w) => {
               const node = world.nodes.find((n) => n.id === w.nodeId);
-              const breach = w.e2eLatencyMs > w.maxLatencyMs;
+              const real = w.source !== "simulation";
+              const breach = !real && w.e2eLatencyMs > w.maxLatencyMs;
               return (
-                <tr key={w.id} className="border-t border-[var(--cp-border)]">
+                <tr
+                  key={w.id}
+                  className="border-t border-[var(--cp-border)] hover:bg-white/[0.02]"
+                >
                   <td className="px-3 py-2">
                     <Link
-                      href={`/control-plane/workloads/${w.id}`}
+                      href={`/control-plane/workloads/${encodeURIComponent(w.id)}`}
                       className="font-medium text-[var(--cp-accent)] hover:underline"
                     >
                       {w.name}
                     </Link>
                     <p className="text-[10px] text-[var(--cp-muted)]">{w.image}</p>
                   </td>
+                  <td className="px-3 py-2">
+                    <SourceBadge source={w.source} />
+                  </td>
                   <td className="px-3 py-2 text-[var(--cp-muted)]">{w.type}</td>
                   <td className="px-3 py-2">{w.status}</td>
+                  <td className="px-3 py-2 text-[var(--cp-muted)]">
+                    {w.namespace ?? "—"}
+                  </td>
                   <td className="px-3 py-2">{node?.name ?? "—"}</td>
                   <td
                     className={`cp-mono px-3 py-2 ${breach ? "text-[var(--cp-crit)]" : ""}`}
                   >
-                    {w.e2eLatencyMs.toFixed(1)}ms
+                    {real
+                      ? `${w.restarts ?? 0} restarts`
+                      : `${w.e2eLatencyMs.toFixed(1)}ms`}
                   </td>
-                  <td className="cp-mono px-3 py-2">{w.inferenceLatencyMs.toFixed(1)}ms</td>
-                  <td className="cp-mono px-3 py-2">{w.networkLatencyMs.toFixed(1)}ms</td>
-                  <td className="cp-mono px-3 py-2">{w.requestsPerSec}</td>
-                  <td className="cp-mono px-3 py-2">&lt;{w.maxLatencyMs}ms</td>
                 </tr>
               );
             })}

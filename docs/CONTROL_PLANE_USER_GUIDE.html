@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Guía de uso — AI-Native Edge & Network Control Plane</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    :root {
+      --bg: #f7f8fb;
+      --ink: #0f172a;
+      --muted: #475569;
+      --accent: #1d4ed8;
+      --ok: #047857;
+      --warn: #b45309;
+      --line: #e2e8f0;
+      --panel: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      font-size: 11pt;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--panel);
+      padding: 28px 32px 40px;
+    }
+    h1 {
+      font-size: 22pt;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 11pt;
+      margin: 0 0 18px;
+    }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .badge {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge.real { color: var(--ok); border-color: #a7f3d0; background: #ecfdf5; }
+    .badge.sim { color: var(--warn); border-color: #fde68a; background: #fffbeb; }
+    .badge.hybrid { color: var(--accent); border-color: #bfdbfe; background: #eff6ff; }
+    h2 {
+      font-size: 14pt;
+      margin: 26px 0 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      page-break-after: avoid;
+    }
+    h3 { font-size: 11.5pt; margin: 16px 0 6px; color: #1e293b; }
+    p, li { color: #1e293b; }
+    ul, ol { padding-left: 1.2em; margin: 6px 0 12px; }
+    li { margin: 3px 0; }
+    code, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 9.5pt;
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 9pt;
+      overflow: hidden;
+      white-space: pre-wrap;
+      page-break-inside: avoid;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      background: #fafbfc;
+      page-break-inside: avoid;
+    }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .footer {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 9pt;
+    }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .warnbox {
+      border-left: 4px solid var(--warn);
+      background: #fffbeb;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .okbox {
+      border-left: 4px solid var(--ok);
+      background: #ecfdf5;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Guía de uso</h1>
+    <p class="subtitle">AI-Native Edge &amp; Network Control Plane · Hybrid (Simulation + Kubernetes)</p>
+    <div class="badge-row">
+      <span class="badge hybrid">Hybrid</span>
+      <span class="badge sim">Simulated</span>
+      <span class="badge real">Real</span>
+    </div>
+
+    <div class="card toc">
+      <strong>Contenido</strong>
+      <ol>
+        <li>Qué es el Control Plane</li>
+        <li>Arranque rápido</li>
+        <li>Navegación de la interfaz</li>
+        <li>Modo simulación</li>
+        <li>Conectar un cluster Kubernetes real</li>
+        <li>Nodos, workloads y scheduler</li>
+        <li>Desplegar un workload real</li>
+        <li>Badges REAL / SIMULATED</li>
+        <li>Seguridad y buenas prácticas</li>
+        <li>Problemas frecuentes</li>
+      </ol>
+    </div>
+
+    <h2>1. Qué es el Control Plane</h2>
+    <p>
+      Es una aplicación paralela al sitio <strong>LA CAJA</strong>. Convive en el mismo deploy:
+    </p>
+    <ul>
+      <li><code>/</code> — sitio de LA CAJA (no forma parte de esta guía)</li>
+      <li><code>/control-plane</code> — consola de infraestructura</li>
+      <li><code>/api/control-plane/*</code> — APIs del Control Plane</li>
+    </ul>
+    <p>
+      El Control Plane puede operar en <strong>simulación</strong>, con <strong>Kubernetes real</strong>,
+      o en modo <strong>híbrido</strong> (ambas fuentes a la vez). El dominio no habla directamente
+      con la API de Kubernetes: usa adapters (<code>InfrastructureProvider</code>).
+    </p>
+
+    <h2>2. Arranque rápido</h2>
+    <pre>pnpm install
+pnpm dev
+# Abrir http://localhost:3000/control-plane</pre>
+    <div class="okbox">
+      Sin cluster conectado, la simulación funciona sola: clusters, nodos, workloads,
+      topología, scheduler y demo de migración.
+    </div>
+
+    <h2>3. Navegación de la interfaz</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Escritorio</h3>
+        <ul>
+          <li>Sidebar fija a la izquierda</li>
+          <li>Búsqueda / comandos con <span class="mono">⌘K</span> / <span class="mono">Ctrl+K</span></li>
+          <li>Indicador <em>live</em> en la cabecera</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Móvil</h3>
+        <ul>
+          <li>Menú hamburguesa (drawer)</li>
+          <li>Listados en tarjetas (clusters, nodos, workloads)</li>
+          <li>Botones con área táctil ampliada</li>
+        </ul>
+      </div>
+    </div>
+    <p>Secciones principales:</p>
+    <ul>
+      <li><strong>Overview</strong> — métricas NOC, topología, feed de eventos</li>
+      <li><strong>Clusters</strong> — inventario híbrido + Connect Cluster</li>
+      <li><strong>Nodes / Workloads</strong> — inventario con badges de origen</li>
+      <li><strong>Scheduler</strong> — decisiones de placement explicables</li>
+      <li><strong>Simulation</strong> — laboratorio (migración, fallos, GPU sat)</li>
+      <li><strong>Network / Observability / Security</strong> — vistas de dominio</li>
+    </ul>
+
+    <h2>4. Modo simulación</h2>
+    <ol>
+      <li>Abre <code>/control-plane</code></li>
+      <li>Revisa el badge <strong>SIMULATION MODE</strong></li>
+      <li>En Overview pulsa <strong>Run migration demo</strong></li>
+      <li>Observa el feed de eventos y el cambio de nodos/workloads</li>
+      <li>En Simulation Lab puedes inyectar saturación GPU o resetear el escenario</li>
+    </ol>
+    <p>
+      Los datos simulados están etiquetados como <span class="badge sim">SIMULATED</span>
+      y nunca se mezclan en silencio con datos reales.
+    </p>
+
+    <h2>5. Conectar un cluster Kubernetes real</h2>
+    <h3>5.1 Preparar el cluster local</h3>
+    <pre># kind
+kind create cluster --name lab-k8s
+kubectl get nodes
+
+# o k3d
+k3d cluster create lab-k8s
+
+# exportar kubeconfig
+kubectl config view --minify --raw &gt; /tmp/lab-k8s.kubeconfig</pre>
+
+    <h3>5.2 Wizard Connect Cluster</h3>
+    <ol>
+      <li>Ve a <code>/control-plane/clusters</code> → <strong>Connect Cluster</strong></li>
+      <li><strong>Name</strong> — p. ej. <code>lab-k8s</code></li>
+      <li><strong>Provider</strong> — Kubernetes (K3s listo; KubeEdge próximamente)</li>
+      <li><strong>Connection</strong> — pega el kubeconfig (solo server-side)</li>
+      <li><strong>Test</strong> — comprueba acceso a la API</li>
+      <li><strong>Discover</strong> — inventaría nodos y workloads</li>
+      <li><strong>Confirm</strong> — resumen Connected / version / nodes</li>
+    </ol>
+    <div class="warnbox">
+      El kubeconfig <strong>no</strong> se guarda en localStorage ni se reexpone al navegador.
+      Permanece en disco server-side bajo <code>data/control-plane/secrets/</code> (gitignored).
+    </div>
+
+    <h2>6. Nodos, workloads y scheduler</h2>
+    <ul>
+      <li><strong>Nodes</strong> — nodos REAL muestran CPU allocatable, RAM, arch, OS, pods</li>
+      <li><strong>Workloads</strong> — Deployments reales con namespace, restarts, estado</li>
+      <li><strong>Scheduler</strong> — recomienda nodo (score + “Why this node?”) sin reemplazar el scheduler interno de Kubernetes</li>
+    </ul>
+    <p>Filtros en Clusters: <strong>ALL</strong> · <strong>REAL</strong> · <strong>SIMULATION</strong></p>
+
+    <h2>7. Desplegar un workload real</h2>
+    <ol>
+      <li>Abre el detalle de un cluster <span class="badge real">REAL</span></li>
+      <li>Crea un workload (nombre, imagen, CPU/RAM, placement)</li>
+      <li>El scheduler propone un nodo</li>
+      <li>El adapter genera un Deployment en Kubernetes</li>
+      <li>Sigue el estado: Pending → Running (y eventos)</li>
+      <li>Desde el detalle: Restart / Stop / Delete</li>
+    </ol>
+    <div class="card">
+      <strong>Ejemplo conceptual de WorkloadSpec</strong>
+      <pre style="margin:8px 0 0">name: traffic-demo
+type: edge-application
+image: nginx:1.27-alpine
+resources: { cpu: 0.2, memory: 128Mi }
+placement: { region: lab }</pre>
+    </div>
+
+    <h2>8. Badges REAL / SIMULATED</h2>
+    <ul>
+      <li><span class="badge real">REAL</span> — proviene de un adapter conectado (Kubernetes/K3s)</li>
+      <li><span class="badge sim">SIMULATED</span> — laboratorio / Digital Twin simulado</li>
+      <li><strong>DISCONNECTED</strong> — cluster registrado pero API inalcanzable (último estado conocido etiquetado)</li>
+    </ul>
+
+    <h2>9. Seguridad y buenas prácticas</h2>
+    <ul>
+      <li>No pegues tokens en chats ni issues</li>
+      <li>No expongas kubeconfig en el frontend</li>
+      <li>Usa cuentas con permisos mínimos para demos</li>
+      <li>La telemetría avanzada (Prometheus) aparece como <em>Not configured</em> hasta conectar un exporter</li>
+    </ul>
+
+    <h2>10. Problemas frecuentes</h2>
+    <div class="card">
+      <h3>Connection failed</h3>
+      <p>Unable to reach Kubernetes API → comprueba que el API server es alcanzable desde el proceso Next.js, el contexto del kubeconfig y los certificados.</p>
+    </div>
+    <div class="card">
+      <h3>Solo veo SIMULATED</h3>
+      <p>Aún no hay clusters conectados, o el filtro está en SIMULATION. Usa Connect Cluster.</p>
+    </div>
+    <div class="card">
+      <h3>CPU % en nodos reales</h3>
+      <p>Sin metrics-server/Prometheus, el Control Plane muestra capacidad allocatable, no % live inventado.</p>
+    </div>
+
+    <div class="footer">
+      Documentación técnica: <code>docs/CONTROL_PLANE_ARCHITECTURE.md</code> ·
+      <code>docs/KUBERNETES_ADAPTER.md</code> ·
+      <code>docs/LOCAL_DEMO.md</code><br />
+      Generado para el Hybrid Control Plane · LA CAJA Estudio Creativo (aplicación paralela)
+    </div>
+  </div>
+</body>
+</html>
