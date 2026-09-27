@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useControlPlane } from "@/components/control-plane/ControlPlaneProvider";
 import {
   CpButton,
   ModePill,
@@ -14,6 +16,7 @@ const STEPS = ["Name", "Provider", "Connection", "Test", "Discover", "Confirm"] 
 
 export default function ConnectClusterPage() {
   const router = useRouter();
+  const { realOpsEnabled, session } = useControlPlane();
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState("lab-k8s");
   const [provider, setProvider] = useState<"kubernetes" | "k3s" | "kubeedge">(
@@ -88,9 +91,28 @@ export default function ConnectClusterPage() {
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Connect Cluster"
-        subtitle="Register a real Kubernetes/K3s API — kubeconfig stays server-side"
-        actions={<ModePill mode="NOT_CONFIGURED" />}
+        subtitle="Register a real Kubernetes/K3s API — kubeconfig encrypted server-side"
+        actions={<ModePill mode={realOpsEnabled ? "CONNECTED" : "NOT_CONFIGURED"} />}
       />
+
+      {!realOpsEnabled ? (
+        <div className="mb-4 rounded-[var(--cp-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-3 text-[12px] text-amber-100">
+          <p className="font-semibold">Real ops disabled on this host</p>
+          <p className="mt-1 text-amber-100/90">
+            Public/Vercel deployments cannot accept kubeconfigs or mutate clusters.
+            Run the local lab (see <span className="cp-mono">docs/DEMO_GUIDE.md</span>).
+          </p>
+        </div>
+      ) : null}
+
+      {realOpsEnabled && !session.authenticated ? (
+        <div className="mb-4 rounded-[var(--cp-radius)] border border-[var(--cp-accent)]/40 bg-[var(--cp-accent)]/10 px-3 py-3 text-[12px]">
+          Authentication required.{" "}
+          <Link href="/control-plane/login" className="text-[var(--cp-accent)] underline">
+            Sign in as Admin/Operator
+          </Link>
+        </div>
+      ) : null}
 
       <ol className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {STEPS.map((label, i) => (

@@ -36,6 +36,11 @@ export interface InfrastructureProvider {
   restartWorkload(clusterId: string, workloadId: string): Promise<void>;
   stopWorkload(clusterId: string, workloadId: string): Promise<void>;
   deleteWorkload(clusterId: string, workloadId: string): Promise<void>;
+  scaleWorkload?(
+    clusterId: string,
+    workloadId: string,
+    replicas: number,
+  ): Promise<void>;
   getEvents(clusterId: string): Promise<DomainEvent[]>;
   testConnection?(): Promise<{ ok: boolean; message: string; version?: string }>;
 }

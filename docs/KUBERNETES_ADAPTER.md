@@ -22,10 +22,12 @@ Path: `src/control-plane/infrastructure/kubernetes/kubernetes-provider.ts`
 
 ## Security
 
-- kubeconfig only on server disk under `data/control-plane/secrets/`
-- never logged
-- never included in JSON responses
-- connect/test APIs accept kubeconfig once over HTTPS POST; not re-exported
+- Real ops require `CONTROL_PLANE_REAL_OPS_ENABLED=true` + authenticated Admin/Operator
+- Disabled by default on public/Vercel hosts (`REAL_OPS_DISABLED`)
+- kubeconfig encrypted at rest (AES-256-GCM) under `data/control-plane/secrets/*.kubeconfig.enc`
+- never logged; never included in JSON responses
+- writes limited to `CONTROL_PLANE_NAMESPACE` (default `control-plane-demo`)
+- images `:latest` blocked; see `docs/CONTROL_PLANE_SECURITY.md`
 
 ## WorkloadSpec → Deployment
 

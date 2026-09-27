@@ -10,9 +10,14 @@ import { cn } from "@/lib/cn";
 
 export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { world } = useControlPlane();
+  const { world, realOpsEnabled, session, refreshSession } = useControlPlane();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+
+  async function logout() {
+    await fetch("/api/control-plane/auth/logout", { method: "POST" });
+    await refreshSession();
+  }
 
   useEffect(() => {
     setNavOpen(false);
@@ -46,7 +51,13 @@ export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
       <aside className="cp-hide-mobile sticky top-0 flex h-dvh w-[232px] shrink-0 flex-col border-r border-[var(--cp-border)] bg-[var(--cp-panel)]/95 backdrop-blur">
         <SidebarBrand />
         <SidebarNav pathname={pathname} />
-        <SidebarFooter mode={world.mode} tenant={world.tenant.name} role={world.role} />
+        <SidebarFooter
+          mode={world.mode}
+          tenant={world.tenant.name}
+          role={session.role ?? world.role}
+          session={session}
+          onLogout={() => void logout()}
+        />
       </aside>
 
       {/* Mobile drawer */}
@@ -71,7 +82,13 @@ export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
             <SidebarNav pathname={pathname} />
-            <SidebarFooter mode={world.mode} tenant={world.tenant.name} role={world.role} />
+            <SidebarFooter
+              mode={world.mode}
+              tenant={world.tenant.name}
+              role={session.role ?? world.role}
+              session={session}
+              onLogout={() => void logout()}
+            />
           </aside>
         </div>
       ) : null}
@@ -108,6 +125,14 @@ export function ControlPlaneShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="cp-scroll cp-grid-bg flex-1 overflow-auto p-3 pb-8 sm:p-4 md:p-5">
+          {!realOpsEnabled ? (
+            <div className="mb-4 rounded-[var(--cp-radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-100">
+              <strong className="font-semibold">Simulation-safe host.</strong>{" "}
+              Real Kubernetes connect/deploy/delete is disabled here (public/Vercel
+              default). Use a local lab with{" "}
+              <span className="cp-mono">CONTROL_PLANE_REAL_OPS_ENABLED=true</span>.
+            </div>
+          ) : null}
           {children}
         </main>
       </div>
@@ -194,10 +219,14 @@ function SidebarFooter({
   mode,
   tenant,
   role,
+  session,
+  onLogout,
 }: {
   mode: string;
   tenant: string;
   role: string;
+  session: { authenticated: boolean; username?: string; role?: string };
+  onLogout: () => void;
 }) {
   return (
     <div className="border-t border-[var(--cp-border)] p-3">
@@ -207,6 +236,27 @@ function SidebarFooter({
         <br />
         Role: {role}
       </p>
+      {session.authenticated ? (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="truncate text-[11px] text-[var(--cp-text)]">
+            {session.username}
+          </p>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-[10px] text-[var(--cp-muted)] hover:text-[var(--cp-accent)]"
+          >
+            Logout
+          </button>
+        </div>
+      ) : (
+        <Link
+          href="/control-plane/login"
+          className="mt-2 inline-block text-[11px] font-medium text-[var(--cp-accent)] hover:underline"
+        >
+          Sign in
+        </Link>
+      )}
       <a
         href="/docs/CONTROL_PLANE_USER_GUIDE.pdf"
         target="_blank"

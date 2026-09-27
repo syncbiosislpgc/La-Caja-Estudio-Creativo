@@ -1,13 +1,15 @@
 import { mkdir, readFile, writeFile, unlink } from "fs/promises";
 import path from "path";
 import type { ClusterConnection } from "@/control-plane/domain/types";
+import { decryptSecret, encryptSecret } from "@/control-plane/security/crypto";
+import { getSecretKey, realOpsEnabled } from "@/control-plane/security/config";
 
 const ROOT = path.join(process.cwd(), "data", "control-plane");
 const META = path.join(ROOT, "connections.json");
 const SECRETS = path.join(ROOT, "secrets");
 
 export type StoredConnection = ClusterConnection & {
-  /** Absolute path to kubeconfig on server */
+  /** Absolute path to encrypted kubeconfig on server */
   kubeconfigPath: string;
   context?: string;
   region?: string;
@@ -54,6 +56,11 @@ export async function getConnection(id: string) {
   return (await readMeta()).find((c) => c.id === id) ?? null;
 }
 
+export async function readKubeconfigContent(conn: StoredConnection): Promise<string> {
+  const raw = await readFile(conn.kubeconfigPath, "utf8");
+  return decryptSecret(raw);
+}
+
 export async function saveConnection(input: {
   id: string;
   name: string;
@@ -62,14 +69,22 @@ export async function saveConnection(input: {
   context?: string;
   region?: string;
 }): Promise<StoredConnection> {
+  if (!realOpsEnabled()) {
+    throw new Error("Real ops disabled — refusing to persist kubeconfig");
+  }
+  if (!getSecretKey()) {
+    throw new Error(
+      "CONTROL_PLANE_SECRET_KEY (min 32 chars) required to encrypt kubeconfigs at rest",
+    );
+  }
   await ensureDirs();
-  // Basic validation — reject obviously empty
   if (!input.kubeconfigContent.includes("apiVersion")) {
     throw new Error("Invalid kubeconfig: missing apiVersion");
   }
-  // Never accept if it looks like it's being echoed to client later
-  const kubeconfigPath = path.join(SECRETS, `${input.id}.kubeconfig`);
-  await writeFile(kubeconfigPath, input.kubeconfigContent, {
+
+  const kubeconfigPath = path.join(SECRETS, `${input.id}.kubeconfig.enc`);
+  const encrypted = encryptSecret(input.kubeconfigContent);
+  await writeFile(kubeconfigPath, encrypted, {
     encoding: "utf8",
     mode: 0o600,
   });

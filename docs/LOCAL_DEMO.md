@@ -1,6 +1,8 @@
 # Local Demo — Hybrid Control Plane
 
-## 0. Start apps
+> Prefer the commercial walkthrough in `docs/DEMO_GUIDE.md` and readiness matrix in `docs/CONTROL_PLANE_READINESS.md`.
+
+## 0. Start apps (Simulation — safe)
 
 ```bash
 pnpm install
@@ -9,39 +11,37 @@ pnpm dev
 
 - LA CAJA: http://localhost:3000/
 - Control Plane: http://localhost:3000/control-plane
-- Simulation continues to work with **no** cluster connected.
+- Simulation continues with **no** cluster connected.
+- Real connect/deploy is **disabled** unless `CONTROL_PLANE_REAL_OPS_ENABLED=true`.
 
-## 1. Kubernetes / K3s local
-
-### Option A — kind
+## 1. Kubernetes lab (automated)
 
 ```bash
-kind create cluster --name lab-k8s
-kubectl cluster-info
-kubectl get nodes
+pnpm lab:up
+# or: ./scripts/control-plane-lab/up.sh
 ```
 
-### Option B — k3d / k3s
+Manual alternative: kind/k3d + export kubeconfig (see script output path
+`data/control-plane/lab/lab-k8s.kubeconfig`).
+
+## 2. Enable real ops (lab only)
 
 ```bash
-k3d cluster create lab-k8s
-kubectl get nodes
-```
-
-## 2. Export kubeconfig
-
-```bash
-kubectl config view --minify --raw > /tmp/lab-k8s.kubeconfig
+export CONTROL_PLANE_REAL_OPS_ENABLED=true
+export CONTROL_PLANE_SECRET_KEY="$(openssl rand -hex 32)"
+export CONTROL_PLANE_ADMIN_PASSWORD='change-me-strong'
+export CONTROL_PLANE_NAMESPACE=control-plane-demo
+pnpm dev
 ```
 
 ## 3. Connect from UI
 
-1. Open `/control-plane/clusters`
-2. **Connect Cluster**
+1. Sign in at `/control-plane/login` (admin)
+2. Open `/control-plane/clusters` → **Connect Cluster**
 3. Name: `lab-k8s`
 4. Provider: Kubernetes (or K3s)
-5. Paste kubeconfig
-6. Test connection → Discover → Confirm
+5. Paste kubeconfig from `data/control-plane/lab/lab-k8s.kubeconfig`
+6. Test → Discover → Confirm
 
 You should see a **REAL** cluster with discovered nodes.
 

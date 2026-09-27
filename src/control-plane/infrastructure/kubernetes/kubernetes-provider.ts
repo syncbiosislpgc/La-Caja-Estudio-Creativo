@@ -10,12 +10,14 @@ import type {
 } from "@/control-plane/domain/types";
 import type { InfrastructureProvider } from "../provider";
 import { cpLog } from "@/control-plane/application/logger";
+import { getAllowedNamespace } from "@/control-plane/security/config";
+import { assertManagedNamespace } from "@/control-plane/security/policy";
 
 export type KubernetesProviderOptions = {
   connectionId: string;
   clusterName: string;
-  /** Absolute path to kubeconfig (server-side only) */
-  kubeconfigPath: string;
+  /** Decrypted kubeconfig YAML (server-side only — never log) */
+  kubeconfigContent: string;
   region?: string;
   context?: string;
 };
@@ -44,13 +46,17 @@ export class KubernetesInfrastructureProvider implements InfrastructureProvider 
 
   private ensureClients() {
     if (this.loaded && this.core && this.apps) return;
-    this.kc.loadFromFile(this.opts.kubeconfigPath);
+    this.kc.loadFromString(this.opts.kubeconfigContent);
     if (this.opts.context) {
       this.kc.setCurrentContext(this.opts.context);
     }
     this.core = this.kc.makeApiClient(k8s.CoreV1Api);
     this.apps = this.kc.makeApiClient(k8s.AppsV1Api);
     this.loaded = true;
+  }
+
+  private managedNs() {
+    return getAllowedNamespace();
   }
 
   async testConnection() {
@@ -232,8 +238,33 @@ export class KubernetesInfrastructureProvider implements InfrastructureProvider 
   ): Promise<DeploymentResult> {
     if (clusterId !== this.id) throw new Error("Cluster mismatch");
     this.ensureClients();
-    const ns = spec.namespace ?? "control-plane-demo";
+    const ns = spec.namespace ?? this.managedNs();
+    const nsCheck = assertManagedNamespace(ns);
+    if (!nsCheck.ok) throw new Error(nsCheck.reason);
     await ensureNamespace(this.core!, ns);
+
+    const preferredNode = spec.placement?.preferredNodeName;
+    // Soft preference via nodeAffinity — does not replace kube-scheduler.
+    const affinity: k8s.V1Affinity | undefined = preferredNode
+      ? {
+          nodeAffinity: {
+            preferredDuringSchedulingIgnoredDuringExecution: [
+              {
+                weight: 100,
+                preference: {
+                  matchExpressions: [
+                    {
+                      key: "kubernetes.io/hostname",
+                      operator: "In",
+                      values: [preferredNode],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }
+      : undefined;
 
     const body: k8s.V1Deployment = {
       apiVersion: "apps/v1",
@@ -251,17 +282,22 @@ export class KubernetesInfrastructureProvider implements InfrastructureProvider 
         replicas: spec.replicas ?? 1,
         selector: { matchLabels: { app: spec.name } },
         template: {
-          metadata: { labels: { app: spec.name } },
+          metadata: {
+            labels: {
+              app: spec.name,
+              "control-plane.lacaja/managed": "true",
+            },
+          },
           spec: {
-            ...(spec.placement?.preferredNodeName
-              ? {
-                  nodeName: spec.placement.preferredNodeName,
-                }
-              : {}),
+            affinity,
             containers: [
               {
                 name: spec.name,
                 image: spec.image,
+                imagePullPolicy: "IfNotPresent",
+                securityContext: {
+                  allowPrivilegeEscalation: false,
+                },
                 resources: {
                   requests: {
                     cpu: spec.resources.cpu,
@@ -335,13 +371,20 @@ export class KubernetesInfrastructureProvider implements InfrastructureProvider 
     return w?.status ?? "Failed";
   }
 
+  private assertMutable(w: Workload) {
+    const nsCheck = assertManagedNamespace(w.namespace);
+    if (!nsCheck.ok) throw new Error(nsCheck.reason);
+    if (!w.deploymentName) throw new Error("Workload not found");
+  }
+
   async restartWorkload(clusterId: string, workloadId: string): Promise<void> {
     const w = await this.getWorkload(clusterId, workloadId);
-    if (!w?.namespace || !w.deploymentName) throw new Error("Workload not found");
+    if (!w) throw new Error("Workload not found");
+    this.assertMutable(w);
     this.ensureClients();
     const dep = await this.apps!.readNamespacedDeployment({
-      name: w.deploymentName,
-      namespace: w.namespace,
+      name: w.deploymentName!,
+      namespace: w.namespace!,
     });
     const annotations = dep.spec?.template?.metadata?.annotations ?? {};
     annotations["control-plane.lacaja/restartedAt"] = new Date().toISOString();
@@ -351,35 +394,55 @@ export class KubernetesInfrastructureProvider implements InfrastructureProvider 
       dep.spec.template.metadata.annotations = annotations;
     }
     await this.apps!.replaceNamespacedDeployment({
-      name: w.deploymentName,
-      namespace: w.namespace,
+      name: w.deploymentName!,
+      namespace: w.namespace!,
       body: dep,
     });
   }
 
   async stopWorkload(clusterId: string, workloadId: string): Promise<void> {
+    await this.scaleWorkload(clusterId, workloadId, 0);
+  }
+
+  async scaleWorkload(
+    clusterId: string,
+    workloadId: string,
+    replicas: number,
+  ): Promise<void> {
+    if (replicas < 0 || replicas > 10) {
+      throw new Error("Replicas must be between 0 and 10");
+    }
     const w = await this.getWorkload(clusterId, workloadId);
-    if (!w?.namespace || !w.deploymentName) throw new Error("Workload not found");
+    if (!w) throw new Error("Workload not found");
+    this.assertMutable(w);
     this.ensureClients();
     const dep = await this.apps!.readNamespacedDeployment({
-      name: w.deploymentName,
-      namespace: w.namespace,
+      name: w.deploymentName!,
+      namespace: w.namespace!,
     });
-    if (dep.spec) dep.spec.replicas = 0;
+    if (dep.spec) dep.spec.replicas = replicas;
     await this.apps!.replaceNamespacedDeployment({
-      name: w.deploymentName,
-      namespace: w.namespace,
+      name: w.deploymentName!,
+      namespace: w.namespace!,
       body: dep,
+    });
+    cpLog("info", {
+      provider: "kubernetes",
+      cluster: this.name,
+      operation: "scale_workload",
+      workload: w.deploymentName,
+      replicas,
     });
   }
 
   async deleteWorkload(clusterId: string, workloadId: string): Promise<void> {
     const w = await this.getWorkload(clusterId, workloadId);
-    if (!w?.namespace || !w.deploymentName) throw new Error("Workload not found");
+    if (!w) throw new Error("Workload not found");
+    this.assertMutable(w);
     this.ensureClients();
     await this.apps!.deleteNamespacedDeployment({
-      name: w.deploymentName,
-      namespace: w.namespace,
+      name: w.deploymentName!,
+      namespace: w.namespace!,
     });
     cpLog("info", {
       provider: "kubernetes",

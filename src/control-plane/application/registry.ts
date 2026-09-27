@@ -11,26 +11,30 @@ import { KubernetesInfrastructureProvider } from "@/control-plane/infrastructure
 import { SimulationInfrastructureProvider } from "@/control-plane/infrastructure/simulation/simulation-provider";
 import {
   listConnections,
+  readKubeconfigContent,
   toPublicConnection,
   type StoredConnection,
 } from "@/control-plane/persistence/cluster-store";
 import { cpLog } from "@/control-plane/application/logger";
+import { realOpsEnabled } from "@/control-plane/security/config";
 
 let simProvider = new SimulationInfrastructureProvider();
 
-function makeK8sProvider(c: StoredConnection) {
+async function makeK8sProvider(c: StoredConnection) {
+  const kubeconfigContent = await readKubeconfigContent(c);
   return new KubernetesInfrastructureProvider({
     connectionId: c.id,
     clusterName: c.name,
-    kubeconfigPath: c.kubeconfigPath,
+    kubeconfigContent,
     context: c.context,
     region: c.region,
   });
 }
 
 export async function getProviders(): Promise<InfrastructureProvider[]> {
+  if (!realOpsEnabled()) return [simProvider];
   const conns = await listConnections();
-  const real = conns.map(makeK8sProvider);
+  const real = await Promise.all(conns.map((c) => makeK8sProvider(c)));
   return [simProvider, ...real];
 }
 
@@ -47,54 +51,57 @@ export async function buildHybridSnapshot(): Promise<
   WorldSnapshot & {
     connections: ReturnType<typeof toPublicConnection>[];
     telemetryNote: string;
+    realOpsEnabled: boolean;
   }
 > {
   const simWorld = createSeedWorld();
-  // Keep sim provider world aligned for API deploy-into-sim if needed
   simProvider.setWorld(structuredClone(simWorld));
 
-  const conns = await listConnections();
   const realClusters: Cluster[] = [];
   const realNodes: Node[] = [];
   const realWorkloads: Workload[] = [];
   const realEvents: DomainEvent[] = [];
+  let conns: StoredConnection[] = [];
 
-  for (const c of conns) {
-    const provider = makeK8sProvider(c);
-    try {
-      const cluster = await provider.getCluster(c.id);
-      if (cluster) realClusters.push(cluster);
-      if (cluster?.mode === "CONNECTED") {
-        realNodes.push(...(await provider.getNodes(c.id)));
-        realWorkloads.push(...(await provider.getWorkloads(c.id)));
-        realEvents.push(...(await provider.getEvents(c.id)));
+  if (realOpsEnabled()) {
+    conns = await listConnections();
+    for (const c of conns) {
+      try {
+        const provider = await makeK8sProvider(c);
+        const cluster = await provider.getCluster(c.id);
+        if (cluster) realClusters.push(cluster);
+        if (cluster?.mode === "CONNECTED") {
+          realNodes.push(...(await provider.getNodes(c.id)));
+          realWorkloads.push(...(await provider.getWorkloads(c.id)));
+          realEvents.push(...(await provider.getEvents(c.id)));
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "sync failed";
+        cpLog("error", {
+          provider: "kubernetes",
+          cluster: c.name,
+          operation: "hybrid_snapshot",
+          error: message,
+        });
+        realClusters.push({
+          id: c.id,
+          name: c.name,
+          provider: "kubernetes",
+          version: c.version ?? "unknown",
+          region: c.region ?? "lab",
+          country: "—",
+          location: "Connected cluster",
+          status: "OFFLINE",
+          mode: "DISCONNECTED",
+          source: "kubernetes",
+          nodeIds: [],
+          labels: {},
+          capabilities: [],
+          latencyMs: 0,
+          connectionError: message,
+          lastSyncAt: c.lastSyncAt,
+        });
       }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "sync failed";
-      cpLog("error", {
-        provider: "kubernetes",
-        cluster: c.name,
-        operation: "hybrid_snapshot",
-        error: message,
-      });
-      realClusters.push({
-        id: c.id,
-        name: c.name,
-        provider: "kubernetes",
-        version: c.version ?? "unknown",
-        region: c.region ?? "lab",
-        country: "—",
-        location: "Connected cluster",
-        status: "OFFLINE",
-        mode: "DISCONNECTED",
-        source: "kubernetes",
-        nodeIds: [],
-        labels: {},
-        capabilities: [],
-        latencyMs: 0,
-        connectionError: message,
-        lastSyncAt: c.lastSyncAt,
-      });
     }
   }
 
@@ -117,15 +124,16 @@ export async function buildHybridSnapshot(): Promise<
     ],
     metrics: {
       ...simWorld.metrics,
-      // Keep sim metrics for demo; real util often 0 without metrics-server
     },
   };
 
   return {
     ...merged,
     connections: conns.map(toPublicConnection),
-    telemetryNote:
-      realClusters.length > 0
+    realOpsEnabled: realOpsEnabled(),
+    telemetryNote: !realOpsEnabled()
+      ? "Real Kubernetes ops DISABLED on this host (safe public mode). Simulation only."
+      : realClusters.length > 0
         ? "REAL clusters: telemetry from Kubernetes API (no invented %). Advanced metrics: Not configured (Prometheus)."
         : "No REAL clusters connected — showing SIMULATION only.",
   };
@@ -137,10 +145,13 @@ export async function getProviderForCluster(
   if (clusterId.startsWith("cls-") || clusterId === "provider-simulation") {
     return simProvider;
   }
+  if (!realOpsEnabled()) {
+    const sim = await simProvider.getCluster(clusterId);
+    return sim ? simProvider : null;
+  }
   const conns = await listConnections();
   const c = conns.find((x) => x.id === clusterId);
   if (!c) {
-    // maybe simulation cluster id
     const sim = await simProvider.getCluster(clusterId);
     return sim ? simProvider : null;
   }

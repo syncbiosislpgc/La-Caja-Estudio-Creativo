@@ -25,12 +25,23 @@ import type {
 type HybridSnapshot = WorldSnapshot & {
   connections?: ClusterConnection[];
   telemetryNote?: string;
+  realOpsEnabled?: boolean;
+  security?: { note?: string; realOpsEnabled?: boolean };
+};
+
+type SessionInfo = {
+  authenticated: boolean;
+  username?: string;
+  role?: string;
 };
 
 type CpContext = {
   world: WorldSnapshot;
   connections: ClusterConnection[];
   telemetryNote: string;
+  realOpsEnabled: boolean;
+  session: SessionInfo;
+  refreshSession: () => Promise<void>;
   sourceFilter: "ALL" | "REAL" | "SIMULATION";
   setSourceFilter: (f: "ALL" | "REAL" | "SIMULATION") => void;
   loading: boolean;
@@ -62,11 +73,33 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
   }>({ clusters: [], nodes: [], workloads: [], events: [], sites: [] });
   const [connections, setConnections] = useState<ClusterConnection[]>([]);
   const [telemetryNote, setTelemetryNote] = useState("");
+  const [realOpsEnabled, setRealOpsEnabled] = useState(false);
+  const [session, setSession] = useState<SessionInfo>({ authenticated: false });
   const [sourceFilter, setSourceFilter] = useState<"ALL" | "REAL" | "SIMULATION">(
     "ALL",
   );
   const [loading, setLoading] = useState(true);
   const [demoRunning, setDemoRunning] = useState(false);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/control-plane/auth/session", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        authenticated: boolean;
+        user?: { username: string; role: string } | null;
+      };
+      setSession({
+        authenticated: data.authenticated,
+        username: data.user?.username,
+        role: data.user?.role,
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -107,6 +140,7 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
 
       setConnections(data.connections ?? []);
       setTelemetryNote(data.telemetryNote ?? "");
+      setRealOpsEnabled(Boolean(data.realOpsEnabled ?? data.security?.realOpsEnabled));
     } catch {
       /* keep local */
     }
@@ -115,13 +149,13 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await refresh();
+      await Promise.all([refresh(), refreshSession()]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [refresh]);
+  }, [refresh, refreshSession]);
 
   const world = useMemo<WorldSnapshot>(() => {
     return {
@@ -176,6 +210,9 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
       world,
       connections,
       telemetryNote,
+      realOpsEnabled,
+      session,
+      refreshSession,
       sourceFilter,
       setSourceFilter,
       loading,
@@ -193,6 +230,9 @@ export function ControlPlaneProvider({ children }: { children: React.ReactNode }
       world,
       connections,
       telemetryNote,
+      realOpsEnabled,
+      session,
+      refreshSession,
       sourceFilter,
       loading,
       refresh,

@@ -13,6 +13,8 @@ import { placeWorkload } from "@/control-plane/domain/scheduler";
 import type { WorkloadSpec, WorldSnapshot } from "@/control-plane/domain/types";
 import { getProviderForCluster } from "@/control-plane/application/registry";
 import { cpLog } from "@/control-plane/application/logger";
+import { getAllowedNamespace } from "@/control-plane/security/config";
+import { validateKubeconfigShape, validateWorkloadSpec } from "@/control-plane/security/policy";
 
 export async function getSnapshot() {
   return buildHybridSnapshot();
@@ -26,25 +28,16 @@ export async function testKubeconfig(input: {
   kubeconfigContent: string;
   context?: string;
 }) {
-  const tmpId = `test-${randomUUID()}`;
-  const stored = await saveConnection({
-    id: tmpId,
-    name: "__test__",
-    provider: "kubernetes",
+  const shape = validateKubeconfigShape(input.kubeconfigContent);
+  if (!shape.ok) throw new Error(shape.reason);
+
+  const provider = new KubernetesInfrastructureProvider({
+    connectionId: `test-${randomUUID()}`,
+    clusterName: "__test__",
     kubeconfigContent: input.kubeconfigContent,
     context: input.context,
   });
-  try {
-    const provider = new KubernetesInfrastructureProvider({
-      connectionId: stored.id,
-      clusterName: stored.name,
-      kubeconfigPath: stored.kubeconfigPath,
-      context: stored.context,
-    });
-    return await provider.testConnection();
-  } finally {
-    await deleteConnection(tmpId);
-  }
+  return provider.testConnection();
 }
 
 export async function connectCluster(input: {
@@ -54,14 +47,15 @@ export async function connectCluster(input: {
   context?: string;
   region?: string;
 }) {
-  if (input.provider !== "kubernetes" && input.provider !== "k3s") {
-    // KubeEdge prepared but not implemented as separate client yet —
-    // allow kubernetes API for k3s (same client).
-    if (input.provider === "kubeedge") {
-      throw new Error(
-        "KubeEdge adapter is NOT_CONFIGURED yet. Use Kubernetes/K3s for now.",
-      );
-    }
+  if (input.provider === "kubeedge") {
+    throw new Error(
+      "KubeEdge adapter is NOT_CONFIGURED yet. Use Kubernetes/K3s for now.",
+    );
+  }
+  const shape = validateKubeconfigShape(input.kubeconfigContent);
+  if (!shape.ok) throw new Error(shape.reason);
+  if (!input.name || input.name.length > 63) {
+    throw new Error("Invalid cluster name");
   }
 
   const id = `k8s-${input.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}-${randomUUID().slice(0, 8)}`;
@@ -77,7 +71,7 @@ export async function connectCluster(input: {
   const provider = new KubernetesInfrastructureProvider({
     connectionId: stored.id,
     clusterName: stored.name,
-    kubeconfigPath: stored.kubeconfigPath,
+    kubeconfigContent: input.kubeconfigContent,
     context: stored.context,
     region: stored.region,
   });
@@ -88,7 +82,14 @@ export async function connectCluster(input: {
       status: "DISCONNECTED",
       error: test.message,
     });
-    return { connection: toPublicConnection({ ...stored, status: "DISCONNECTED", error: test.message }), test };
+    return {
+      connection: toPublicConnection({
+        ...stored,
+        status: "DISCONNECTED",
+        error: test.message,
+      }),
+      test,
+    };
   }
 
   const cluster = await provider.getCluster(id);
@@ -128,15 +129,25 @@ export async function deployWithScheduler(
   spec: WorkloadSpec,
   options?: { useScheduler?: boolean },
 ) {
+  const policy = validateWorkloadSpec({
+    name: spec.name,
+    image: spec.image,
+    namespace: spec.namespace ?? getAllowedNamespace(),
+    replicas: spec.replicas,
+  });
+  if (!policy.ok) throw new Error(policy.reason);
+
   const provider = await getProviderForCluster(clusterId);
   if (!provider) throw new Error("Provider not found for cluster");
+  if (provider.kind === "simulation") {
+    throw new Error("Cannot deploy REAL workload to a simulated cluster");
+  }
 
   let preferred = spec.placement?.preferredNodeName;
   let decision = null;
 
   if (options?.useScheduler !== false) {
     const snap = await buildHybridSnapshot();
-    // Temporary workload for scoring
     const phantomId = `phantom-${spec.name}`;
     const phantomWorld: WorldSnapshot = {
       ...snap,
@@ -146,17 +157,18 @@ export async function deployWithScheduler(
           name: spec.name,
           type: spec.type,
           status: "Scheduling",
-          source: snap.clusters.find((c) => c.id === clusterId)?.source ?? "kubernetes",
+          source:
+            snap.clusters.find((c) => c.id === clusterId)?.source ?? "kubernetes",
           image: spec.image,
           clusterId,
-          cpu: Number.parseFloat(spec.resources.cpu) || 1,
-          memoryGi: Number.parseFloat(spec.resources.memory) || 1,
+          cpu: Number.parseFloat(spec.resources.cpu) || 0.1,
+          memoryGi: Number.parseFloat(spec.resources.memory) || 0.128,
           gpu: spec.resources.gpu ?? 0,
           gpuMemoryGi: 0,
-          maxLatencyMs: spec.network?.maxLatencyMs ?? 50,
-          minBandwidthMbps: spec.network?.minBandwidthMbps ?? 10,
+          maxLatencyMs: spec.network?.maxLatencyMs ?? 0,
+          minBandwidthMbps: spec.network?.minBandwidthMbps ?? 0,
           region: spec.placement?.region ?? "lab",
-          allowedRegions: [spec.placement?.region ?? "lab", "EU"],
+          allowedRegions: [spec.placement?.region ?? "lab", "EU", "lab"],
           availability: 99.9,
           requestsPerSec: 0,
           inferenceLatencyMs: 0,
@@ -167,7 +179,6 @@ export async function deployWithScheduler(
         },
         ...snap.workloads,
       ],
-      // Only score nodes of target cluster
       nodes: snap.nodes.filter((n) => n.clusterId === clusterId),
     };
     decision = placeWorkload(phantomWorld, phantomId);
@@ -185,6 +196,7 @@ export async function deployWithScheduler(
 
   const result = await provider.deployWorkload(clusterId, {
     ...spec,
+    namespace: spec.namespace ?? getAllowedNamespace(),
     placement: {
       ...spec.placement,
       preferredNodeName: preferred,
