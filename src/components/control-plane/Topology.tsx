@@ -22,7 +22,7 @@ export function TopologyCanvas() {
         </p>
         <p className="text-[10px] text-amber-300">SIMULATION · data-driven paths</p>
       </div>
-      <svg viewBox="0 0 960 400" className="h-[360px] w-full">
+      <svg viewBox="0 0 960 400" className="cp-topology-svg h-[280px] w-full sm:h-[360px]">
         {links.map((l) => {
           const a = nodeMap[l.from];
           const b = nodeMap[l.to];

@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "oracle-oci-cloud": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["oracle.oci-cloud-mcp-server@latest"],
+      "env": {
+        "OCI_CONFIG_PROFILE": "DEFAULT",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+    "oracle-oci-compute": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["oracle.oci-compute-mcp-server@latest"],
+      "env": {
+        "OCI_CONFIG_PROFILE": "DEFAULT",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    }
+  }
+}

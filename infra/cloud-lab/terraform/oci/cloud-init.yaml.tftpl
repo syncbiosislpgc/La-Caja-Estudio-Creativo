@@ -1,0 +1,17 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+  - git
+  - rsync
+  - ufw
+runcmd:
+  - ufw allow OpenSSH
+  - ufw deny 6443/tcp
+  - ufw --force enable || true
+  - |
+    echo "Cloud-init base ready. Complete bootstrap manually:"
+    echo "  git clone ${repo_url} /opt/cp-repo"
+    echo "  cd /opt/cp-repo && sudo ./infra/cloud-lab/scripts/bootstrap-lab.sh"
+final_message: "Control Plane lab base image ready."

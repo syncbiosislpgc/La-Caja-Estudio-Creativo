@@ -7,6 +7,7 @@ export const CP_NAV = [
     title: "Infrastructure",
     items: [
       { label: "Clusters", href: "/control-plane/clusters" },
+      { label: "Connect Cluster", href: "/control-plane/clusters/connect" },
       { label: "Nodes", href: "/control-plane/nodes" },
       { label: "Edge Sites", href: "/control-plane/clusters?view=sites" },
     ],

@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seed-nginx
+  namespace: control-plane-demo
+  labels:
+    app: seed-nginx
+    control-plane.lacaja/managed: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seed-nginx
+  template:
+    metadata:
+      labels:
+        app: seed-nginx
+        control-plane.lacaja/managed: "true"
+    spec:
+      containers:
+        - name: nginx
+          # Multi-arch; works on ARM64 Ampere
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
